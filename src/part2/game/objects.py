@@ -79,7 +79,7 @@ class Player(PhysicsObject):
         self.__sprite: Surface
 
     def ready(self) -> None:
-        self.__sprite = pygame.image.load(Path("../assets/sprite_player.png"))
+        self.__sprite = pygame.image.load(Path("src/part2/assets/sprite_player.png"))
    
     def update(self, delta: float) -> None:
         pass
