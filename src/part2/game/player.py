@@ -36,3 +36,14 @@ class Player(KinematicObject):
 
     def free(self) -> None:
         pass
+
+class Bullet(KinematicObject):
+    def __init__(self, velocity = None, acceleration = None, mass = 1, **kwargs):
+        super().__init__(velocity, acceleration, mass, **kwargs)
+        
+    def ready(self) -> None:
+        pass
+    
+    def update(self, delta, events):
+        return super().update(delta, events)
+    

@@ -32,7 +32,7 @@ def main():
             position=Vector2(WIDTH // 2, HEIGHT // 2),
             radius=30.0)
     enemy_spawner.ready()
-
+    
     running = True
     while running:
         delta: float = clock.tick_busy_loop(FPS) / 1000.0
@@ -52,6 +52,8 @@ def main():
         for enemy in enemy_spawner.enemy_pool:
             enemy.draw(screen)
         player.draw(screen)
+        enemy.draw(screen)
+        screen.blit(bullet_img, (100, 100))
         pygame.display.flip()
 
     player.free()
