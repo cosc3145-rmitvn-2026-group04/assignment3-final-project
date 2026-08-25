@@ -4,7 +4,7 @@ from pygame.math import Vector2
 from pygame.event import Event
 from game.config import *
 from game.player import Player
-from game.enemy import Enemy
+from game.enemy import EnemySpawner
 
 def main():
     pygame.init()
@@ -22,12 +22,17 @@ def main():
             offset=Vector2(0, 4),
             image=pygame.image.load(Path("src/part2/assets/sprite_player.png")))
     player.ready()
-    enemy: Enemy = Enemy(
-            health=ENEMY_HEALTH,
-            speed=ENEMY_SPEED,
-            radius=9.5,
-            image=pygame.image.load(Path("src/part2/assets/sprite_enemy.png")))
-    
+    enemy_spawner: EnemySpawner = EnemySpawner(
+            health=ENEMY_SPAWNER_HEALTH,
+            enemy_pool=[],
+            enemy_spawn_amount=1,
+            max_enemy_count=3,
+            enemy_spawn_delay=5.0,
+            activation_delay=3.0,
+            position=Vector2(WIDTH // 2, HEIGHT // 2),
+            radius=30.0)
+    enemy_spawner.ready()
+
     running = True
     while running:
         delta: float = clock.tick_busy_loop(FPS) / 1000.0
@@ -39,13 +44,18 @@ def main():
                 running = False
 
         player.update(delta, events)
-        enemy.update(delta, events, player=player)
+        enemy_spawner.update(delta, events)
+        for enemy in enemy_spawner.enemy_pool:
+            enemy.update(delta, events, player)
 
+        enemy_spawner.draw(screen)
+        for enemy in enemy_spawner.enemy_pool:
+            enemy.draw(screen)
         player.draw(screen)
-        enemy.draw(screen)
         pygame.display.flip()
-   
+
     player.free()
+    enemy_spawner.free()
     pygame.quit()
     
 if __name__ == "__main__":
