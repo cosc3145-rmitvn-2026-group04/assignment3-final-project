@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from pygame import Surface, Rect
-from pygame.sprite import AbstractGroup, Sprite
-from pygame.math import Vector2
 import pygame
+from pygame import Surface, Rect
+from pygame.math import Vector2
+from pygame.event import Event
+from pygame.sprite import AbstractGroup, Sprite
 from engine.config import (
         COLOR_RENDER_DEBUG_BOUNDING_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_CIRCLE,
@@ -10,7 +11,38 @@ from engine.config import (
         COLOR_RENDER_DEBUG_ACCELERATION)
 
 
-class SpatialObject(Sprite, ABC):
+class GameObject(ABC):
+    def __init__(self) -> None:
+        """
+        Base class for all game objects. Lean implementation of Godot's Node.
+
+        Notes on methods: Modelled after Godot's architecture. These 4 methods
+        should be overriden to provide custom implementations based on the game
+        object:
+        - `ready()` should be called outside of the game loop.
+        - `update()` should be called inside of the game loop for every game
+        tick, with `delta` time and `events` provided as arguments. Acts as a
+        hook for custom logic. Similar in role to Node._process() combined with
+        Node._input() in Godot.
+        - `free()` can be called at discretion if overriden with cleanup logic
+        for performance, or to keep the game in a valid state.
+        """
+        pass
+
+    @abstractmethod 
+    def ready(self) -> None:
+        pass
+   
+    @abstractmethod
+    def update(self, delta: float, events: list[Event]) -> None:
+        pass
+    
+    @abstractmethod
+    def free(self) -> None:
+        pass
+
+
+class SpatialObject(GameObject, Sprite, ABC):
     def __init__(self,
             position: Vector2 | None = None,
             rotation: float = 0.0,
@@ -23,7 +55,7 @@ class SpatialObject(Sprite, ABC):
             *groups: AbstractGroup
     ):
         """
-        Base class for all game objects, inherits pygame.sprite.Sprite
+        Base class for all visible game objects, inherits pygame.sprite.Sprite
         features. Lean implementation of Godot's Node2D.
 
         Notes on properties:
@@ -41,15 +73,6 @@ class SpatialObject(Sprite, ABC):
         - `offset` only affects the visual position of the rendered sprite on
         the screen, not the actual position of the object. Always relative to
         the object's transformation.
-
-        Notes on methods: Modelled after Godot's architecture. These 3 methods
-        should be overriden to provide custom implementations based on the game
-        object:
-        - `ready()` should be called outside of the game loop.
-        - `update()` should be called inside of the game loop for every game
-        tick, with delta time provided as an argument.
-        - `free()` can be called at discretion if overriden with cleanup logic
-        for performance, or to keep the game in a valid state.
 
         Remember to call `draw()` at each frame to render the game object.
         """
@@ -69,7 +92,7 @@ class SpatialObject(Sprite, ABC):
         pass
    
     @abstractmethod
-    def update(self, delta: float) -> None:
+    def update(self, delta: float, events: list[Event]) -> None:
         self.__update_internal()
         pass
     
@@ -79,16 +102,18 @@ class SpatialObject(Sprite, ABC):
 
     def draw(self,
             screen: Surface,
+            debug_image_rect: bool = False,
             debug_bounding_rect: bool = False,
             debug_bounding_circle: bool = False
     ) -> None:
         draw_offset: Vector2 = -self.offset.rotate(-self.rotation)
         screen.blit(source=self.image, dest=self.rect.move(draw_offset.x, draw_offset.y))
-        pygame.draw.rect(
-                surface=screen,
-                color=COLOR_RENDER_DEBUG_VELOCITY,
-                rect=self.rect.move(draw_offset.x, draw_offset.y),
-                width=1)
+        if debug_image_rect:
+            pygame.draw.rect(
+                    surface=screen,
+                    color=COLOR_RENDER_DEBUG_VELOCITY,
+                    rect=self.rect.move(draw_offset.x, draw_offset.y),
+                    width=1)
         if debug_bounding_rect:
             pygame.draw.rect(
                     surface=screen,
@@ -111,7 +136,7 @@ class SpatialObject(Sprite, ABC):
         self.rect: Rect = self.image.get_rect(center=self.position)
 
 
-class KinematicObject(SpatialObject):
+class KinematicObject(SpatialObject, ABC):
     def __init__(self,
             velocity: Vector2 | None = None,
             acceleration: Vector2 | None = None,
@@ -131,8 +156,8 @@ class KinematicObject(SpatialObject):
         - Unlike Godot's CharacterBody2D, there is no built-in collision
         detection. Use `pygame.sprite.spritecollide()`, related methods, plus
         manual update of `position` instead.
-        - `rotation` is decoupled from movement. Provide custom implementation
-        if needed.
+        - `rotation` is decoupled from movement and there is no angular
+        momentum. Provide custom implementation if needed.
         """
         super().__init__(**kwargs)
         self.velocity: Vector2 = velocity if velocity else Vector2(0, 0)
@@ -144,8 +169,8 @@ class KinematicObject(SpatialObject):
         pass
    
     @abstractmethod
-    def update(self, delta: float) -> None:
-        super().update(delta)
+    def update(self, delta: float, events: list[Event]) -> None:
+        super().update(delta, events)
     
     @abstractmethod
     def free(self) -> None:
