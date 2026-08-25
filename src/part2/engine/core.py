@@ -34,7 +34,7 @@ class GameObject(ABC):
         pass
    
     @abstractmethod
-    def update(self, delta: float, events: list[Event]) -> None:
+    def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
         pass
     
     @abstractmethod
@@ -92,7 +92,7 @@ class SpatialObject(GameObject, Sprite, ABC):
         pass
    
     @abstractmethod
-    def update(self, delta: float, events: list[Event]) -> None:
+    def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
         self.__update_internal()
         pass
     
@@ -169,7 +169,7 @@ class KinematicObject(SpatialObject, ABC):
         pass
    
     @abstractmethod
-    def update(self, delta: float, events: list[Event]) -> None:
+    def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
         super().update(delta, events)
     
     @abstractmethod
