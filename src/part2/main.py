@@ -1,8 +1,8 @@
-import pygame
-import sys, random
+from pathlib import Path
 from pygame.math import Vector2
+import pygame
 from game.config import *
-from game.objects import Player
+from game.player import Player
 
 def main():
     pygame.init()
@@ -13,7 +13,11 @@ def main():
 
     player: Player = Player(
             health=100,
-            position=Vector2(WIDTH // 2, HEIGHT // 2))
+            position=Vector2(WIDTH // 2, HEIGHT // 2),
+            velocity=Vector2(10, 8),
+            radius=20.0,
+            offset=Vector2(0, 20),
+            image=pygame.image.load(Path("src/part2/assets/sprite_player.png")))
     player.ready()
     
     running = True
@@ -25,13 +29,17 @@ def main():
                 running = False
 
         player.update(delta)
-        player.draw(screen)
-        
+
+        player.draw(
+                screen,
+                debug_bounding_rect=True,
+                debug_bounding_circle=True,
+                debug_velocity=True,
+                debug_acceleration=True)
         pygame.display.flip()
    
     player.free()
     pygame.quit()
-    sys.exit(0)
     
 if __name__ == "__main__":
     main()
