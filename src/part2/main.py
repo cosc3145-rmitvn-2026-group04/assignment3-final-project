@@ -18,7 +18,7 @@ def main():
     
     running = True
     while running:
-        delta: float = clock.tick(FPS) / 1000.0
+        delta: float = clock.tick_busy_loop(FPS) / 1000.0
         screen.fill(BG)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
