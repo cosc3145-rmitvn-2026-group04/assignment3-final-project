@@ -3,7 +3,7 @@ import pygame
 from pygame.math import Vector2
 from pygame.event import Event
 from game.config import *
-from game.player import Player
+from game.player import Player, Bullet
 from game.enemy import EnemySpawner
 
 def main():
@@ -12,6 +12,8 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("consolas", 22)
+    
+    bullets: list[Bullet] = []
 
     player: Player = Player(
             health=PLAYER_HEALTH,
@@ -20,7 +22,9 @@ def main():
             position=Vector2(WIDTH // 2, HEIGHT // 2),
             radius=12.0,
             offset=Vector2(0, 4),
-            image=pygame.image.load(Path("src/part2/assets/sprite_player.png")))
+            image=pygame.image.load(Path("src/part2/assets/sprite_player.png")),
+            bullets_list = bullets
+            )
     player.ready()
     enemy_spawner: EnemySpawner = EnemySpawner(
             health=ENEMY_SPAWNER_HEALTH,
@@ -44,16 +48,20 @@ def main():
                 running = False
 
         player.update(delta, events)
+        for bullet in bullets:
+            bullet.update(delta, events)
         enemy_spawner.update(delta, events)
         for enemy in enemy_spawner.enemy_pool:
             enemy.update(delta, events, player)
+        enemy.update(delta, events, player=player)
 
+        for bullet in bullets:
+            bullet.draw(screen)
         enemy_spawner.draw(screen)
         for enemy in enemy_spawner.enemy_pool:
             enemy.draw(screen)
         player.draw(screen)
         enemy.draw(screen)
-        screen.blit(bullet_img, (100, 100))
         pygame.display.flip()
 
     player.free()
