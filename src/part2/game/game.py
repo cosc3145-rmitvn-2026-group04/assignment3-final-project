@@ -65,6 +65,8 @@ class Game:
             if len(self.enemy_spawner_pool.objects()) == 0:
                 self.game_over = True
                 self.status = GameStatus.GAME_WON
+        elif len(self.player_bullet_pool.objects()) > 0:
+            self.player_bullet_pool.empty()
 
     def render(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
         self.player_bullet_pool.draw(

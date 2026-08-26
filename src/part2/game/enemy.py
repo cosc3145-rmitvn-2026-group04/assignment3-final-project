@@ -53,7 +53,11 @@ class EnemySpawner(SpatialObject):
 
         active: bool = (current_tick - self.__ready_tick) / 1000.0 >= self.activation_delay
         spawn_ready: bool = (current_tick - self.__last_spawn_tick) / 1000.0 >= self.enemy_spawn_delay
-        if active and (spawn_ready or self.__first_spawn):
+        if (
+            active
+            and (spawn_ready or self.__first_spawn)
+            and len(enemy_pool.objects()) < enemy_pool.max_size
+        ):
             if self.__first_spawn:
                 self.__first_spawn = False
             self.__last_spawn_tick = current_tick
@@ -64,7 +68,11 @@ class EnemySpawner(SpatialObject):
                 enemy_pool.add(new_enemy)
         super().update(delta, events)
 
-        if not self.__first_spawn and (current_tick - self.__last_spawn_tick) / 1000.0 <= 0.1:
+        if (
+            not self.__first_spawn
+            and (current_tick - self.__last_spawn_tick) / 1000.0 <= 0.1
+            and len(enemy_pool.objects()) <= enemy_pool.max_size
+        ):
             self.scale = Vector2(1.1, 1.1)
         else:
             self.scale = Vector2(1.0, 1.0)

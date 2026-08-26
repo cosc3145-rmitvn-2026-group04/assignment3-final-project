@@ -36,7 +36,7 @@ class MainHUD(UserInterface):
                     PLAYER_INVULNERABLE_COOLDOWN_DURATION
                     - (pygame.time.get_ticks() - self.game.player.last_invulnerable_tick) / 1000.0
                 )
-                if self.game.player.invulnerable
+                if not self.game.game_over and self.game.player.invulnerable
                 else ""
             )
         )
