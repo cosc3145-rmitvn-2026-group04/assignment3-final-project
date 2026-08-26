@@ -15,10 +15,7 @@ class Player(KinematicObject):
         self.speed: int = speed
         self.angular_speed: float = angular_speed
         self.bullets_list = bullets_list
-
-    def ready(self) -> None:
-        pass
-   
+ 
     def update(self, delta: float, events: list[Event]) -> None:
         self.velocity = Vector2(0, 0)
 
@@ -38,28 +35,21 @@ class Player(KinematicObject):
                     position = Vector2(self.position),
                     rotation = self.rotation,
                 )
-                new_bullet.ready()
                 self.bullets_list.append(new_bullet)
 
         self.move(delta)
         super().update(delta, events)
 
-    def free(self) -> None:
-        pass
 
 class PlayerBullet(KinematicObject):
     def __init__(self, speed: int, **kwargs):
         kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_bullet.png"))
         super().__init__(**kwargs)
         self.speed: int = speed
-        
-    def ready(self) -> None:
+
         direction = Vector2(0, -1).rotate(-self.rotation)
         self.velocity = direction * self.speed
-    
+        
     def update(self, delta, events: list[Event]) -> None:
         self.move (delta)
         super().update(delta, events)
-    
-    def free(self) -> None:
-        pass

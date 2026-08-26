@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 import pygame
 from pygame import Surface, Rect
 from pygame.math import Vector2
@@ -11,38 +10,26 @@ from engine.config import (
         COLOR_RENDER_DEBUG_ACCELERATION)
 
 
-class GameObject(ABC):
+class GameObject:
     def __init__(self) -> None:
         """
-        Base class for all game objects. Lean implementation of Godot's Node.
+        Base class for all game objects. Lean implementation of Godot's `Node`.
 
-        Notes on methods: Modelled after Godot's architecture. These 4 methods
-        should be overriden to provide custom implementations based on the game
-        object:
-        - `ready()` should be called outside of the game loop.
+        - The constructor (`__init__()`) acts like both `Node._init()` and
+        `Node._ready()`.
         - `update()` should be called inside of the game loop for every game
         tick, with `delta` time and `events` provided as arguments. Acts as a
-        hook for custom logic. Similar in role to Node._process() combined with
-        Node._input() in Godot.
-        - `free()` can be called at discretion if overriden with cleanup logic
-        for performance, or to keep the game in a valid state.
+        hook for custom logic. Similar in role to `Node._process()` combined
+        with `Node._input()` in Godot. More arguments can be passed in using
+        `*args` and `**kwargs` for access to external references.
         """
         pass
-
-    @abstractmethod 
-    def ready(self) -> None:
-        pass
-   
-    @abstractmethod
+ 
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
-        pass
-    
-    @abstractmethod
-    def free(self) -> None:
-        pass
+        pass    
 
 
-class SpatialObject(GameObject, Sprite, ABC):
+class SpatialObject(GameObject, Sprite):
     def __init__(self,
             position: Vector2 | None = None,
             rotation: float = 0.0,
@@ -55,8 +42,9 @@ class SpatialObject(GameObject, Sprite, ABC):
             *groups: AbstractGroup
     ):
         """
-        Base class for all visible game objects, inherits pygame.sprite.Sprite
-        features. Lean implementation of Godot's Node2D.
+        Base class for all visible game objects, inherits
+        `pygame.sprite.Sprite` features. Lean implementation of Godot's
+        `Node2D`.
 
         Notes on properties:
         - `rotation` is in degrees.
@@ -65,7 +53,7 @@ class SpatialObject(GameObject, Sprite, ABC):
         `pygame.sprite.spritecollide()` and related methods).
         - `radius` is only used for circular collision detection and nothing
         else.
-        - Similar to Godot's Node2D, but with built-in "Sprite" if `image` is
+        - Similar to Godot's `Node2D`, but with built-in "Sprite" if `image` is
         specified, otherwise it would be invisible.
         - The bounding box (`rect`) and `image` is automatically updated from
         using the current values of `position`, `rotation`, `scale`, `flip_x`,
@@ -73,8 +61,11 @@ class SpatialObject(GameObject, Sprite, ABC):
         - `offset` only affects the visual position of the rendered sprite on
         the screen, not the actual position of the object. Always relative to
         the object's transformation.
-
-        Remember to call `draw()` at each frame to render the game object.
+        
+        Compatible with `pygame.sprite.Group` and its children classes, except
+        for the `draw()` method, which must be manually called for each object
+        per frame due to its custom rendering logic. USING
+        `pygame.sprite.Group.draw()` WILL RESULT IN INCORRECT OUTPUT.
         """
         super().__init__(*groups)
         self.position: Vector2 = position if position else Vector2(0, 0)
@@ -86,19 +77,10 @@ class SpatialObject(GameObject, Sprite, ABC):
         self.radius = radius
         self.__image_source: Surface = image if image else Surface(Vector2(0, 0))
         self.__update_internal()
-
-    @abstractmethod 
-    def ready(self) -> None:
-        pass
-   
-    @abstractmethod
+ 
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
         self.__update_internal()
-        pass
-    
-    @abstractmethod
-    def free(self) -> None:
-        pass
+        super().update(delta, events, *args, **kwargs)    
 
     def draw(self,
             screen: Surface,
@@ -136,7 +118,7 @@ class SpatialObject(GameObject, Sprite, ABC):
         self.rect: Rect = self.image.get_rect(center=self.position)
 
 
-class KinematicObject(SpatialObject, ABC):
+class KinematicObject(SpatialObject):
     def __init__(self,
             velocity: Vector2 | None = None,
             acceleration: Vector2 | None = None,
@@ -145,15 +127,15 @@ class KinematicObject(SpatialObject, ABC):
     ):
         """
         Base class for all game objects with programmable physics-based
-        properties and movement. Inherits SpatialObject. Lean implementation of
-        Godot's CharacterBody2D.
+        properties and movement. Inherits `SpatialObject`. Lean implementation
+        of Godot's `CharacterBody2D`.
 
         Notes:
         - The physical properties are `velocity` (defaults to zero),
         `acceleration` (defaults to zero) and `mass` (defaults to 1.0).
         - `position` can be updated either directly or automatically by using
         the `move()` method. All updates should be implemented in `update()`.
-        - Unlike Godot's CharacterBody2D, there is no built-in collision
+        - Unlike Godot's `CharacterBody2D`, there is no built-in collision
         detection. Use `pygame.sprite.spritecollide()`, related methods, plus
         manual update of `position` instead.
         - `rotation` is decoupled from movement and there is no angular
@@ -163,18 +145,9 @@ class KinematicObject(SpatialObject, ABC):
         self.velocity: Vector2 = velocity if velocity else Vector2(0, 0)
         self.acceleration: Vector2 = acceleration if acceleration else Vector2(0, 0)
         self.mass: float = mass
-    
-    @abstractmethod 
-    def ready(self) -> None:
-        pass
-   
-    @abstractmethod
+     
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
-        super().update(delta, events)
-    
-    @abstractmethod
-    def free(self) -> None:
-        pass
+        super().update(delta, events, *args, **kwargs)    
 
     def draw(self,
             screen: Surface, *args,

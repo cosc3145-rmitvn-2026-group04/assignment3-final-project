@@ -27,11 +27,9 @@ class EnemySpawner(SpatialObject):
         self.spawn_amount: int = enemy_spawn_amount  # The amount of enemies being spawned at once per spawn cycle.
         self.enemy_spawn_delay: float = enemy_spawn_delay  # The delay in seconds between spawn cycles.
         self.activation_delay: float = activation_delay  # The duration that this spawner will sleep before activating.
-
-    def ready(self) -> None:
         self.__ready_tick: int = pygame.time.get_ticks()
         self.__last_spawn_tick: int = 0
-   
+
     def update(self, delta: float, events: list[Event]) -> None:
         current_tick: int = pygame.time.get_ticks()
         active: bool = (current_tick - self.__ready_tick) / 1000.0 >= self.activation_delay
@@ -46,9 +44,6 @@ class EnemySpawner(SpatialObject):
                 self.enemy_pool.append(new_enemy)
         super().update(delta, events)
 
-    def free(self) -> None:
-        pass
-
 
 class Enemy(KinematicObject):
     def __init__(self, health: int, speed: int, **kwargs):
@@ -57,10 +52,7 @@ class Enemy(KinematicObject):
         super().__init__(**kwargs)
         self.health: int = health
         self.speed: int = speed
-    
-    def ready(self) -> None:
-        pass
-   
+
     def update(self, delta: float, events: list[Event], player: Player) -> None:
         desired_velocity: Vector2 = player.position - self.position
         if desired_velocity.length_squared() > 0.0:
@@ -74,6 +66,3 @@ class Enemy(KinematicObject):
 
         if pygame.sprite.collide_circle(self, player):
             print("Ouch!")
-
-    def free(self) -> None:
-        pass

@@ -24,7 +24,6 @@ def main():
             offset=Vector2(0, 4),
             bullets_list = bullets
             )
-    player.ready()
     enemy_spawner: EnemySpawner = EnemySpawner(
             health=ENEMY_SPAWNER_HEALTH,
             enemy_pool=[],
@@ -34,7 +33,6 @@ def main():
             activation_delay=3.0,
             position=Vector2(WIDTH // 2, HEIGHT // 2),
             radius=30.0)
-    enemy_spawner.ready()
     
     running = True
     while running:
@@ -61,8 +59,6 @@ def main():
         player.draw(screen)
         pygame.display.flip()
 
-    player.free()
-    enemy_spawner.free()
     pygame.quit()
     
 if __name__ == "__main__":
