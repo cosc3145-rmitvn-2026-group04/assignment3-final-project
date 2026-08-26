@@ -46,7 +46,13 @@ def main():
         # === Global Input ===
         events: list[Event] = pygame.event.get()
         for event in events:
-            if event.type == pygame.QUIT:
+            if (
+                event.type == pygame.QUIT
+                or (
+                   event.type == pygame.KEYDOWN
+                   and event.key == pygame.K_ESCAPE
+                )
+            ):
                 running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
                 debug_render = not debug_render
