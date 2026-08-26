@@ -7,8 +7,8 @@ ASSET_DIR: Path = BASE_DIR / "assets"
 
 # Display
 WINDOW_WIDTH: int = 800
-WINDOW_HEIGHT: int = 800
-MAIN_HUD_HEIGHT: int = 200  # Main HUD is positioned at the bottom of the screen.
+WINDOW_HEIGHT: int = 664
+MAIN_HUD_HEIGHT: int = 64  # Main HUD is positioned at the bottom of the screen.
 FPS: int = 60
 
 # Colors
