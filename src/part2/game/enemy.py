@@ -4,7 +4,7 @@ import pygame
 from pygame.math import Vector2
 from pygame.sprite import AbstractGroup
 from pygame.event import Event
-from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT
+from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT
 from part2.engine.core import SpatialObject, KinematicObject, Group
 from part2.game.player import Player
 from part2.game.config import (
@@ -71,13 +71,13 @@ class Enemy(KinematicObject):
 
         if pygame.sprite.collide_circle(self, player):
             print("Ouch!")  # TODO: Implement this.
-    
+
     def _get_seek_force(self, target_position: Vector2) -> Vector2:
         desired_velocity: Vector2 = target_position - self.position
         if desired_velocity.length_squared() > 0.0:
             desired_velocity.clamp_magnitude_ip(self.speed, self.speed)
         return desired_velocity - self.velocity
-    
+
     def _get_separation_force(self, enemy_pool: EnemyPool) -> Vector2:
         r: Vector2 = Vector2(0, 0)
         neighbor: Enemy
@@ -93,13 +93,13 @@ class Enemy(KinematicObject):
                     )
                     r += separation_force
         return r
-    
+
     def _limit_screen_bound(self) -> None:
         x: float
         y: float
         x, y = self.position.x, self.position.y
         x = pygame.math.clamp(x, self.radius, WINDOW_WIDTH - self.radius)
-        y = pygame.math.clamp(y, self.radius, WINDOW_HEIGHT - self.radius)
+        y = pygame.math.clamp(y, self.radius, WINDOW_HEIGHT - MAIN_HUD_HEIGHT - self.radius)
         if x != self.position.x or y != self.position.y:
             self.position = Vector2(x, y)
 
@@ -111,7 +111,7 @@ class EnemyPool(Group):
     ) -> None:
         self.max_size: int = max_size
         super().__init__(*objects)
-    
+
     def add(self, *sprites: Any | AbstractGroup | Iterable) -> None:
         if len(self.objects()) < self.max_size:
             super().add(*sprites)

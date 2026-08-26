@@ -1,12 +1,17 @@
 from pathlib import Path
+from pygame.color import Color
 
 # Paths
-BASE_DIR = Path(__file__).resolve().parent
-ASSET_DIR = BASE_DIR / "assets"
+BASE_DIR: Path = Path(__file__).resolve().parent
+ASSET_DIR: Path = BASE_DIR / "assets"
 
 # Display
-WINDOW_WIDTH, WINDOW_HEIGHT = 800, 600
-FPS = 60
+WINDOW_WIDTH: int = 800
+WINDOW_HEIGHT: int = 800
+MAIN_HUD_HEIGHT: int = 200  # Main HUD is positioned at the bottom of the screen.
+FPS: int = 60
 
 # Colors
-COLOR_BACKGROUND = (39, 35, 47)
+COLOR_BACKGROUND = Color(39, 35, 47)
+COLOR_MAIN_HUD_FOREGROUND = Color(255, 255, 255)
+COLOR_MAIN_HUD_BACKGROUND = Color(0, 0, 0)

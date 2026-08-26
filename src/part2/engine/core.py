@@ -4,6 +4,7 @@ import pygame
 from pygame import Surface, Rect
 from pygame.math import Vector2
 from pygame.event import Event
+from pygame.font import Font
 from pygame.sprite import AbstractGroup, Group as PygameSpriteGroup, Sprite
 from part2.engine.config import (
         COLOR_RENDER_DEBUG_BOUNDING_RECT,
@@ -33,9 +34,23 @@ class GameObject:
 
 class UserInterface(GameObject):
     def __init__(self,
-
-        ) -> None:
+            rect: Rect,
+            fonts: dict[str, Font]
+    ):
+        """
+        Base class for game UI. Manipulate the `surface` property in `update()`
+        to be rendered in `draw()`.
+        """
         super().__init__()
+        self.rect: Rect = rect
+        self.fonts: dict[str, Font] = fonts
+        self.surface: Surface = Surface(Vector2(self.rect.width, self.rect.height))
+
+    def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
+        pass
+
+    def draw(self, screen: Surface) -> None:
+        screen.blit(self.surface, Vector2(self.rect.x, self.rect.y))
 
 
 class SpatialObject(GameObject, Sprite):
