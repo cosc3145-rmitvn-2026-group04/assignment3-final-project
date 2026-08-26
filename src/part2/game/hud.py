@@ -5,7 +5,7 @@ from pygame.event import Event
 from pygame.font import Font
 from part2.engine.core import UserInterface
 from part2.game.config import PLAYER_HEALTH, PLAYER_INVULNERABLE_COOLDOWN_DURATION
-from part2.game.player import Player
+from part2.game.game import Game, GameStatus
 from part2.config import (
         WINDOW_WIDTH, WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT,
@@ -14,17 +14,17 @@ from part2.config import (
 
 
 class MainHUD(UserInterface):
-    def __init__(self, fonts: dict[str, Font], player: Player):
+    def __init__(self, fonts: dict[str, Font], game: Game):
         rect: Rect = Rect(
                 0, WINDOW_HEIGHT - MAIN_HUD_HEIGHT,
                 WINDOW_WIDTH, MAIN_HUD_HEIGHT)
         super().__init__(rect, fonts)
-        self.player: Player = player
+        self.game: Game = game
 
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
         self.surface.fill(COLOR_MAIN_HUD_BACKGROUND)
 
-        player_hp: int = self.player.health
+        player_hp: int = self.game.player.health
         player_hp_bar_fill_text: str = "•" * player_hp
         player_hp_bar_null_text: str = " " * (PLAYER_HEALTH - player_hp)
         player_hp_text: str = "HP [%s%s] %d %s" % (
@@ -34,9 +34,9 @@ class MainHUD(UserInterface):
             (
                 "(INVULN %.1f)" % (
                     PLAYER_INVULNERABLE_COOLDOWN_DURATION
-                    - (pygame.time.get_ticks() - self.player.last_invulnerable_tick) / 1000.0
+                    - (pygame.time.get_ticks() - self.game.player.last_invulnerable_tick) / 1000.0
                 )
-                if self.player.invulnerable
+                if self.game.player.invulnerable
                 else ""
             )
         )
@@ -44,5 +44,13 @@ class MainHUD(UserInterface):
                 player_hp_text,
                 True, COLOR_MAIN_HUD_FOREGROUND)
         self.surface.blit(player_hp_label, Vector2(20, 20))
+
+        if self.game.status != GameStatus.GAME_ONGOING:
+            game_result_label: Surface = self.fonts["h2"].render(
+                "GAME WON" if self.game.status == GameStatus.GAME_WON else "GAME LOST",
+                True, COLOR_MAIN_HUD_FOREGROUND)
+            self.surface.blit(
+                    game_result_label,
+                    Vector2(WINDOW_WIDTH - game_result_label.get_width() - 20, 20))
 
         return super().update(delta, events, *args, **kwargs)

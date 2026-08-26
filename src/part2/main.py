@@ -33,7 +33,7 @@ def main():
 
     game: Game = Game()
 
-    main_hud: MainHUD = MainHUD(fonts, game.player)
+    main_hud: MainHUD = MainHUD(fonts, game)
 
     running: bool = True
     while running:
@@ -47,6 +47,8 @@ def main():
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                game.reset()
         # ====================
 
         # ====== Update ======

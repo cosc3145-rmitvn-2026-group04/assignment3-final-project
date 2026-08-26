@@ -1,3 +1,4 @@
+from enum import Enum
 from pygame import Surface
 from pygame.math import Vector2
 from pygame.font import Font
@@ -15,11 +16,20 @@ from part2.config import (
         MAIN_HUD_HEIGHT)
 
 
+class GameStatus(Enum):
+    GAME_LOST = -1
+    GAME_ONGOING = 0
+    GAME_WON = 1
+
+
 class Game:
     def __init__(self) -> None:
         self.reset()
 
     def reset(self) -> None:
+        self.game_over: bool = False
+        self.status: GameStatus = GameStatus.GAME_ONGOING
+
         self.player_bullet_pool: PlayerBulletPool = PlayerBulletPool()
         self.enemy_spawner_pool: EnemySpawnerPool = EnemySpawnerPool()
         self.enemy_pool: EnemyPool = EnemyPool(max_size=5)
@@ -43,10 +53,18 @@ class Game:
         self.enemy_spawner_pool.add(enemy_spawner)
 
     def update(self, delta: float, events: list[Event]) -> None:
-        self.player.update(delta, events, self.player_bullet_pool)
-        self.player_bullet_pool.update(delta, events, self.enemy_spawner_pool, self.enemy_pool)
-        self.enemy_spawner_pool.update(delta, events, self.enemy_pool)
-        self.enemy_pool.update(delta, events, self.player, self.enemy_pool)
+        if not self.game_over:
+            self.player.update(delta, events, self.player_bullet_pool)
+            self.player_bullet_pool.update(delta, events, self.enemy_spawner_pool, self.enemy_pool)
+            self.enemy_spawner_pool.update(delta, events, self.enemy_pool)
+            self.enemy_pool.update(delta, events, self.player, self.enemy_pool)
+
+            if self.player.health == 0:
+                self.game_over = True
+                self.status = GameStatus.GAME_LOST
+            if len(self.enemy_spawner_pool.objects()) == 0:
+                self.game_over = True
+                self.status = GameStatus.GAME_WON
 
     def render(self, screen: Surface, fonts: dict[str, Font]) -> None:
         self.player_bullet_pool.draw(screen)
