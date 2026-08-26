@@ -5,7 +5,7 @@ from pygame.math import Vector2
 from pygame.sprite import AbstractGroup
 from pygame.key import ScancodeWrapper
 from pygame.event import Event
-from part2.config import ASSET_DIR
+from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT
 from part2.engine.core import KinematicObject, Group
 from part2.game.config import PLAYER_BULLET_SPEED
 
@@ -40,7 +40,17 @@ class Player(KinematicObject):
                 bullet_pool.add(new_bullet)
 
         self.move(delta)
+        self._limit_screen_bound()
         super().update(delta, events)
+    
+    def _limit_screen_bound(self) -> None:
+        x: float
+        y: float
+        x, y = self.position.x, self.position.y
+        x = pygame.math.clamp(x, self.radius, WINDOW_WIDTH - self.radius)
+        y = pygame.math.clamp(y, self.radius, WINDOW_HEIGHT - self.radius)
+        if x != self.position.x or y != self.position.y:
+            self.position = Vector2(x, y)
 
 
 class PlayerBullet(KinematicObject):
