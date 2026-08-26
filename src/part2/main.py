@@ -77,7 +77,7 @@ def main():
 
         # ====== Update ======
         player.update(delta, events, player_bullet_pool)
-        player_bullet_pool.update(delta, events, enemy_pool)
+        player_bullet_pool.update(delta, events, enemy_spawner_pool, enemy_pool)
         enemy_spawner_pool.update(delta, events, enemy_pool)
         enemy_pool.update(delta, events, player, enemy_pool)
 
@@ -86,7 +86,7 @@ def main():
 
         # ======= Draw =======
         player_bullet_pool.draw(screen)
-        enemy_spawner_pool.draw(screen)
+        enemy_spawner_pool.draw(screen, fonts)
         enemy_pool.draw(screen)
         player.draw(screen)
 

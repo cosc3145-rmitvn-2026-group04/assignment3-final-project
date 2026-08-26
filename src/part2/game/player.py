@@ -49,7 +49,7 @@ class Player(KinematicObject):
         if self.invulnerable:
             current_tick: int = pygame.time.get_ticks()
 
-            if (current_tick - self.last_invulnerable_tick) / 1000.0 < 0.05:
+            if (current_tick - self.last_invulnerable_tick) / 1000.0 < 0.1:
                 self.scale = Vector2(0.9, 0.9)
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_player_hurt.png")
             elif (current_tick - self.last_invulnerable_tick) / 1000.0 <= PLAYER_INVULNERABLE_COOLDOWN_DURATION:
@@ -88,10 +88,26 @@ class PlayerBullet(KinematicObject):
         direction = Vector2(0, -1).rotate(-self.rotation)
         self.velocity = direction * self.speed
 
-    def update(self, delta, events: list[Event], enemy_pool: enemy.EnemyPool) -> None:
+    def update(self,
+            delta,
+            events: list[Event],
+            enemy_spawner_pool: enemy.EnemySpawnerPool,
+            enemy_pool: enemy.EnemyPool
+    ) -> None:
         if self.alive() and (self.__out_of_bound or self.__collided):
             self.kill()
             return
+
+        collided_enemy_spawners: list[enemy.EnemySpawner] = pygame.sprite.spritecollide(
+                sprite=self, # type: ignore
+                group=enemy_spawner_pool,
+                dokill=False,
+                collided=pygame.sprite.collide_circle)
+        collided_enemy_spawner: enemy.EnemySpawner
+        for collided_enemy_spawner in collided_enemy_spawners:
+            collided_enemy_spawner.hurt()
+            if not self.__collided:
+                self.__collided = True
 
         collided_enemies: list[enemy.Enemy] = pygame.sprite.spritecollide(
                 sprite=self, # type: ignore
@@ -104,7 +120,8 @@ class PlayerBullet(KinematicObject):
             if not self.__collided:
                 self.__collided = True
 
-        self.move(delta)
+        if not self.__collided:
+            self.move(delta)
         if (
             self.position.x < -self.radius
             or self.position.x > WINDOW_WIDTH + self.radius
