@@ -17,7 +17,7 @@ class Player(KinematicObject):
         self.health: int = health
         self.speed: int = speed
         self.angular_speed: float = angular_speed
- 
+
     def update(self, delta: float, events: list[Event], bullet_pool: PlayerBulletPool) -> None:
         self.velocity = Vector2(0, 0)
 
@@ -42,7 +42,7 @@ class Player(KinematicObject):
         self.move(delta)
         self._limit_screen_bound()
         super().update(delta, events)
-    
+
     def _limit_screen_bound(self) -> None:
         x: float
         y: float
@@ -63,7 +63,7 @@ class PlayerBullet(KinematicObject):
 
         direction = Vector2(0, -1).rotate(-self.rotation)
         self.velocity = direction * self.speed
-        
+
     def update(self, delta, events: list[Event]) -> None:
         self.move (delta)
         super().update(delta, events)

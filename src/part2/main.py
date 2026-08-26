@@ -21,7 +21,7 @@ def main():
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("consolas", 22)
-   
+
     player_bullet_pool: PlayerBulletPool = PlayerBulletPool()
     enemy_pool: EnemyPool = EnemyPool(max_size=3)
 
@@ -40,7 +40,7 @@ def main():
             activation_delay=3.0,
             position=Vector2(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2),
             radius=30.0)
-        
+
     running: bool = True
     while running:
         delta: float = clock.tick_busy_loop(FPS) / 1000.0
@@ -64,6 +64,6 @@ def main():
         pygame.display.flip()
 
     pygame.quit()
-    
+
 if __name__ == "__main__":
     main()

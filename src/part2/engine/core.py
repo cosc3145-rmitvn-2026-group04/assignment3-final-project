@@ -26,9 +26,16 @@ class GameObject:
         `*args` and `**kwargs` for access to external references.
         """
         pass
- 
+
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
-        pass    
+        pass
+
+
+class UserInterface(GameObject):
+    def __init__(self,
+
+        ) -> None:
+        super().__init__()
 
 
 class SpatialObject(GameObject, Sprite):
@@ -63,7 +70,7 @@ class SpatialObject(GameObject, Sprite):
         - `offset` only affects the visual position of the rendered sprite on
         the screen, not the actual position of the object. Always relative to
         the object's transformation.
-        
+
         Compatible with `pygame.sprite.Group` and its children classes, except
         for the `draw()` method, which must be manually called for each object
         per frame due to its custom rendering logic. USING
@@ -80,10 +87,10 @@ class SpatialObject(GameObject, Sprite):
         self.radius = radius
         self.__image_source: Surface = image if image else Surface(Vector2(0, 0))
         self.__update_internal()
- 
+
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
         self.__update_internal()
-        super().update(delta, events, *args, **kwargs)    
+        super().update(delta, events, *args, **kwargs)
 
     def draw(self,
             screen: Surface,
@@ -117,7 +124,7 @@ class SpatialObject(GameObject, Sprite):
         self.image: Surface = self.__image_source.copy()
         self.image = pygame.transform.flip(self.image, self.flip_x, self.flip_y)
         self.image = pygame.transform.smoothscale_by(self.image, (self.scale.x, self.scale.y))
-        self.image = pygame.transform.rotozoom(self.image, self.rotation, 1.0) 
+        self.image = pygame.transform.rotozoom(self.image, self.rotation, 1.0)
         self.rect: Rect = self.image.get_rect(center=self.position)
 
 
@@ -148,9 +155,9 @@ class KinematicObject(SpatialObject):
         self.velocity: Vector2 = velocity if velocity else Vector2(0, 0)
         self.acceleration: Vector2 = acceleration if acceleration else Vector2(0, 0)
         self.mass: float = mass
-     
+
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
-        super().update(delta, events, *args, **kwargs)    
+        super().update(delta, events, *args, **kwargs)
 
     def draw(self,
             screen: Surface, *args,
@@ -177,7 +184,7 @@ class KinematicObject(SpatialObject):
     def move(self, delta: float) -> None:
         self.velocity += self.acceleration * delta
         self.position += self.velocity * delta
-        
+
 
 class Group(PygameSpriteGroup):
     def __init__(self, *game_objects: Any | AbstractGroup | Iterable) -> None:
@@ -186,8 +193,8 @@ class Group(PygameSpriteGroup):
         this project.
         """
         super().__init__(*game_objects)
-   
-    def objects(self) -> List: 
+
+    def objects(self) -> List:
         """Returns a list of objects in the group"""
         return super().sprites()
 
