@@ -100,7 +100,7 @@ class SpatialObject(GameObject, Sprite):
         self.flip_y: bool = flip_y
         self.offset: Vector2 = offset if offset else Vector2(0, 0)
         self.radius = radius
-        self.__image_source: Surface = image if image else Surface(Vector2(0, 0))
+        self._image_source: Surface = image if image else Surface(Vector2(0, 0))
         self.__update_internal()
 
     def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
@@ -136,7 +136,7 @@ class SpatialObject(GameObject, Sprite):
                     width=1)
 
     def __update_internal(self) -> None:
-        self.image: Surface = self.__image_source.copy()
+        self.image: Surface = self._image_source.copy()
         self.image = pygame.transform.flip(self.image, self.flip_x, self.flip_y)
         self.image = pygame.transform.smoothscale_by(self.image, (self.scale.x, self.scale.y))
         self.image = pygame.transform.rotozoom(self.image, self.rotation, 1.0)

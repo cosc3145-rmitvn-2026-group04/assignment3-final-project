@@ -47,8 +47,17 @@ class Player(KinematicObject):
 
         if self.invulnerable:
             current_tick: int = pygame.time.get_ticks()
+
+            if (current_tick - self.last_invulnerable_tick) / 1000.0 < 0.1:
+                self.scale = Vector2(1.5, 1.5)
+            else:
+                self.scale = Vector2(1, 1)
+
             if (current_tick - self.last_invulnerable_tick) / 1000.0 > PLAYER_INVULNERABLE_COOLDOWN_DURATION:
+                self._image_source = pygame.image.load(ASSET_DIR / "sprite_player.png")
                 self.invulnerable = False
+            else:
+                self._image_source = pygame.image.load(ASSET_DIR / "sprite_player_invulnerable.png")
 
     def hurt(self) -> None:
         if self.health > 0:
