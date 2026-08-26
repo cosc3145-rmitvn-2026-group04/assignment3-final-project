@@ -6,9 +6,8 @@ from pygame.sprite import AbstractGroup
 from pygame.event import Event
 from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT
 from part2.engine.core import SpatialObject, KinematicObject, Group
-from part2.game.player import Player
+import part2.game.player as player
 from part2.game.config import (
-        ENEMY_HEALTH,
         ENEMY_SPEED,
         ENEMY_SEPARATION_ACTIVATE_RADIUS,
         ENEMY_SEPARATION_FORCE_WEIGHT)
@@ -40,7 +39,6 @@ class EnemySpawner(SpatialObject):
             self.__last_spawn_tick = current_tick
             for _ in range(self.spawn_amount):
                 new_enemy: Enemy = Enemy(
-                        health=ENEMY_HEALTH,
                         speed=ENEMY_SPEED,
                         position=self.position.copy())
                 enemy_pool.add(new_enemy)
@@ -48,17 +46,16 @@ class EnemySpawner(SpatialObject):
 
 
 class Enemy(KinematicObject):
-    def __init__(self, health: int, speed: int, **kwargs):
+    def __init__(self, speed: int, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy.png")
         kwargs["radius"] = 10.0
         super().__init__(**kwargs)
-        self.health: int = health
         self.speed: int = speed
 
     def update(self,
             delta: float,
             events: list[Event],
-            player: Player,
+            player: player.Player,
             enemy_pool: EnemyPool
     ) -> None:
         self.acceleration = self._get_seek_force(player.position)
@@ -72,6 +69,9 @@ class Enemy(KinematicObject):
         if pygame.sprite.collide_circle(self, player):
             if not player.invulnerable:
                 player.hurt()
+
+    def hurt(self) -> None:
+        self.kill()
 
     def _get_seek_force(self, target_position: Vector2) -> Vector2:
         desired_velocity: Vector2 = target_position - self.position

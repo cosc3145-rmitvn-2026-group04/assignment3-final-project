@@ -7,6 +7,7 @@ from pygame.key import ScancodeWrapper
 from pygame.event import Event
 from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT
 from part2.engine.core import KinematicObject, Group
+import part2.game.enemy as enemy
 from part2.game.config import PLAYER_BULLET_SPEED, PLAYER_INVULNERABLE_COOLDOWN_DURATION
 
 
@@ -82,12 +83,36 @@ class PlayerBullet(KinematicObject):
         kwargs["offset"] = Vector2(0, -4)
         super().__init__(**kwargs)
         self.speed: float = speed
+        self.__out_of_bound: bool = False
+        self.__collided: bool = False
 
         direction = Vector2(0, -1).rotate(-self.rotation)
         self.velocity = direction * self.speed
 
-    def update(self, delta, events: list[Event]) -> None:
-        self.move (delta)
+    def update(self, delta, events: list[Event], enemy_pool: enemy.EnemyPool) -> None:
+        if self.alive() and (self.__out_of_bound or self.__collided):
+            self.kill()
+            return
+
+        collided_enemies: list[enemy.Enemy] = pygame.sprite.spritecollide(
+                sprite=self, # type: ignore
+                group=enemy_pool,
+                dokill=False,
+                collided=pygame.sprite.collide_circle)
+        collided_enemy: enemy.Enemy
+        for collided_enemy in collided_enemies:
+            collided_enemy.hurt()
+            if not self.__collided:
+                self.__collided = True
+
+        self.move(delta)
+        if (
+            self.position.x < -self.radius
+            or self.position.x > WINDOW_WIDTH + self.radius
+            or self.position.y < -self.radius
+            or self.position.y > WINDOW_HEIGHT + self.radius
+        ):
+            self.__out_of_bound = True
         super().update(delta, events)
 
 
