@@ -1,5 +1,5 @@
 PLAYER_HEALTH: int = 5  # HP
-PLAYER_INVULNERABLE_COOLDOWN_DURATION: float = 3.0  # seconds
+PLAYER_INVULNERABLE_COOLDOWN_DURATION: float = 1.0  # seconds
 PLAYER_SPEED: float = 160.0  # px/s
 PLAYER_ANGULAR_SPEED: float = 180.0  # deg/s
 PLAYER_BULLET_SPEED: float = 800.0  # px/s
