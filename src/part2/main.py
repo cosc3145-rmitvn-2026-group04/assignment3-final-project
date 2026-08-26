@@ -8,18 +8,11 @@ from pygame.time import Clock
 from pygame.math import Vector2
 from pygame.font import SysFont, Font
 from pygame.event import Event
+from part2.game.game import Game
 from part2.game.hud import MainHUD
-from part2.game.player import Player, PlayerBulletPool
-from part2.game.enemy import EnemySpawner, EnemySpawnerPool, EnemyPool
-from part2.game.config import (
-        PLAYER_HEALTH,
-        PLAYER_SPEED,
-        PLAYER_ANGULAR_SPEED,
-        ENEMY_SPAWNER_HEALTH)
 from part2.config import (
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
-        MAIN_HUD_HEIGHT,
         FPS,
         COLOR_BACKGROUND)
 
@@ -38,28 +31,9 @@ def main():
         "xsmall": SysFont("Consolas", 12, False),
     }
 
-    player_bullet_pool: PlayerBulletPool = PlayerBulletPool()
-    enemy_spawner_pool: EnemySpawnerPool = EnemySpawnerPool()
-    enemy_pool: EnemyPool = EnemyPool(max_size=5)
+    game: Game = Game()
 
-    player: Player = Player(
-            health=PLAYER_HEALTH,
-            speed=PLAYER_SPEED,
-            angular_speed=PLAYER_ANGULAR_SPEED,
-            position=Vector2(WINDOW_WIDTH // 2, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2 + 256),
-            radius=12.0,
-            offset=Vector2(0, 4)
-            )
-    enemy_spawner: EnemySpawner = EnemySpawner(
-            health=ENEMY_SPAWNER_HEALTH,
-            enemy_spawn_amount=2,
-            enemy_spawn_delay=5.0,
-            activation_delay=3.0,
-            position=Vector2(WINDOW_WIDTH // 2, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2),
-            radius=30.0)
-    enemy_spawner_pool.add(enemy_spawner)
-
-    main_hud: MainHUD = MainHUD(fonts, player)
+    main_hud: MainHUD = MainHUD(fonts, game.player)
 
     running: bool = True
     while running:
@@ -76,20 +50,12 @@ def main():
         # ====================
 
         # ====== Update ======
-        player.update(delta, events, player_bullet_pool)
-        player_bullet_pool.update(delta, events, enemy_spawner_pool, enemy_pool)
-        enemy_spawner_pool.update(delta, events, enemy_pool)
-        enemy_pool.update(delta, events, player, enemy_pool)
-
+        game.update(delta, events)
         main_hud.update(delta, events)
         # ====================
 
         # ======= Draw =======
-        player_bullet_pool.draw(screen)
-        enemy_spawner_pool.draw(screen, fonts)
-        enemy_pool.draw(screen)
-        player.draw(screen)
-
+        game.render(screen, fonts)
         main_hud.draw(screen)
 
         pygame.display.flip()
