@@ -76,7 +76,7 @@ class Game:
         else:
             if len(self.player_bullet_pool.objects()) > 0:
                 self.player_bullet_pool.empty()
-            if len(self.enemy_pool.objects()) > 0:
+            if len(self.enemy_pool.objects()) > 0 and self.status == GameStatus.GAME_WON:
                 self.enemy_pool.empty()
 
     def render(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
