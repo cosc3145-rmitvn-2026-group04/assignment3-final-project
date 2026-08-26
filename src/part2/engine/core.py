@@ -7,6 +7,7 @@ from pygame.event import Event
 from pygame.font import Font
 from pygame.sprite import AbstractGroup, Group as PygameSpriteGroup, Sprite
 from part2.engine.config import (
+        COLOR_RENDER_DEBUG_IMAGE_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_CIRCLE,
         COLOR_RENDER_DEBUG_VELOCITY,
@@ -118,7 +119,7 @@ class SpatialObject(GameObject, Sprite):
         if debug_image_rect:
             pygame.draw.rect(
                     surface=screen,
-                    color=COLOR_RENDER_DEBUG_VELOCITY,
+                    color=COLOR_RENDER_DEBUG_IMAGE_RECT,
                     rect=self.rect.move(draw_offset.x, draw_offset.y),
                     width=1)
         if debug_bounding_rect:

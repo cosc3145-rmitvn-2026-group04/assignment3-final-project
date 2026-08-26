@@ -66,8 +66,30 @@ class Game:
                 self.game_over = True
                 self.status = GameStatus.GAME_WON
 
-    def render(self, screen: Surface, fonts: dict[str, Font]) -> None:
-        self.player_bullet_pool.draw(screen)
-        self.enemy_spawner_pool.draw(screen, fonts)
-        self.enemy_pool.draw(screen)
-        self.player.draw(screen)
+    def render(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
+        self.player_bullet_pool.draw(
+                screen,
+                debug_image_rect=debug,
+                debug_bounding_rect=debug,
+                debug_bounding_circle=debug,
+                debug_velocity=debug,
+                debug_acceleration=debug)
+        self.enemy_spawner_pool.draw(
+                screen, fonts,
+                debug_image_rect=debug,
+                debug_bounding_rect=debug,
+                debug_bounding_circle=debug)
+        self.enemy_pool.draw(
+                screen,
+                debug_image_rect=debug,
+                debug_bounding_rect=debug,
+                debug_bounding_circle=debug,
+                debug_velocity=debug,
+                debug_acceleration=debug)
+        self.player.draw(
+                screen,
+                debug_image_rect=debug,
+                debug_bounding_rect=debug,
+                debug_bounding_circle=debug,
+                debug_velocity=debug,
+                debug_acceleration=debug)

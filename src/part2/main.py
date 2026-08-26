@@ -33,6 +33,7 @@ def main():
 
     game: Game = Game()
 
+    debug_render: bool = False
     main_hud: MainHUD = MainHUD(fonts, game)
 
     running: bool = True
@@ -47,6 +48,8 @@ def main():
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                debug_render = not debug_render
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 game.reset()
         # ====================
@@ -57,7 +60,7 @@ def main():
         # ====================
 
         # ======= Draw =======
-        game.render(screen, fonts)
+        game.render(screen, fonts, debug_render)
         main_hud.draw(screen)
 
         pygame.display.flip()
