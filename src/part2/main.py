@@ -5,8 +5,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import pygame
 from pygame.math import Vector2
 from pygame.event import Event
-from part2.game.player import Player, PlayerBullet
-from part2.game.enemy import EnemySpawner
+from part2.game.player import Player, PlayerBulletPool
+from part2.game.enemy import EnemySpawner, EnemyPool
 from part2.game.config import (
         PLAYER_HEALTH,
         PLAYER_SPEED,
@@ -14,14 +14,16 @@ from part2.game.config import (
         ENEMY_SPAWNER_HEALTH)
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, COLOR_BACKGROUND
 
+
 def main():
     pygame.init()
     pygame.display.set_caption("Space Defense")
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("consolas", 22)
-    
-    bullets: list[PlayerBullet] = []
+   
+    player_bullet_pool: PlayerBulletPool = PlayerBulletPool()
+    enemy_pool: EnemyPool = EnemyPool(max_size=3)
 
     player: Player = Player(
             health=PLAYER_HEALTH,
@@ -29,19 +31,16 @@ def main():
             angular_speed=PLAYER_ANGULAR_SPEED,
             position=Vector2(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 256),
             radius=12.0,
-            offset=Vector2(0, 4),
-            bullets_list = bullets
+            offset=Vector2(0, 4)
             )
     enemy_spawner: EnemySpawner = EnemySpawner(
             health=ENEMY_SPAWNER_HEALTH,
-            enemy_pool=[],
             enemy_spawn_amount=1,
-            max_enemy_count=3,
             enemy_spawn_delay=5.0,
             activation_delay=3.0,
             position=Vector2(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2),
             radius=30.0)
-    
+        
     running = True
     while running:
         delta: float = clock.tick_busy_loop(FPS) / 1000.0
@@ -52,19 +51,16 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        player.update(delta, events)
-        for bullet in bullets:
-            bullet.update(delta, events)
-        enemy_spawner.update(delta, events)
-        for enemy in enemy_spawner.enemy_pool:
-            enemy.update(delta, events, player)
+        player.update(delta, events, player_bullet_pool)
+        player_bullet_pool.update(delta, events)
+        enemy_spawner.update(delta, events, enemy_pool)
+        enemy_pool.update(delta, events, player)
 
-        for bullet in bullets:
-            bullet.draw(screen)
+        player_bullet_pool.draw(screen)
         enemy_spawner.draw(screen)
-        for enemy in enemy_spawner.enemy_pool:
-            enemy.draw(screen)
+        enemy_pool.draw(screen)
         player.draw(screen)
+
         pygame.display.flip()
 
     pygame.quit()

@@ -1,22 +1,24 @@
+from __future__ import annotations
+from typing import Any, Iterable
 import pygame
 from pygame.math import Vector2
+from pygame.sprite import AbstractGroup
 from pygame.key import ScancodeWrapper
 from pygame.event import Event
 from part2.config import ASSET_DIR
-from part2.engine.core import KinematicObject
+from part2.engine.core import KinematicObject, Group
 from part2.game.config import PLAYER_BULLET_SPEED
 
 
 class Player(KinematicObject):
-    def __init__(self, health: int, speed: int, bullets_list: list, angular_speed: float, **kwargs):
+    def __init__(self, health: int, speed: int, angular_speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player.png")
         super().__init__(**kwargs)
         self.health: int = health
         self.speed: int = speed
         self.angular_speed: float = angular_speed
-        self.bullets_list = bullets_list
  
-    def update(self, delta: float, events: list[Event]) -> None:
+    def update(self, delta: float, events: list[Event], bullet_pool: PlayerBulletPool) -> None:
         self.velocity = Vector2(0, 0)
 
         pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
@@ -35,7 +37,7 @@ class Player(KinematicObject):
                     position = Vector2(self.position),
                     rotation = self.rotation,
                 )
-                self.bullets_list.append(new_bullet)
+                bullet_pool.add(new_bullet)
 
         self.move(delta)
         super().update(delta, events)
@@ -54,3 +56,8 @@ class PlayerBullet(KinematicObject):
     def update(self, delta, events: list[Event]) -> None:
         self.move (delta)
         super().update(delta, events)
+
+
+class PlayerBulletPool(Group):
+    def __init__(self, *objects: Any | AbstractGroup | Iterable) -> None:
+        super().__init__(*objects)

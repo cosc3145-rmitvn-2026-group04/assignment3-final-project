@@ -1,9 +1,11 @@
 from __future__ import annotations
+from typing import Any, Iterable
 import pygame
 from pygame.math import Vector2
+from pygame.sprite import AbstractGroup
 from pygame.event import Event
 from part2.config import ASSET_DIR
-from part2.engine.core import SpatialObject, KinematicObject
+from part2.engine.core import SpatialObject, KinematicObject, Group
 from part2.game.player import Player
 from part2.game.config import ENEMY_HEALTH, ENEMY_SPEED
 
@@ -11,8 +13,6 @@ from part2.game.config import ENEMY_HEALTH, ENEMY_SPEED
 class EnemySpawner(SpatialObject):
     def __init__(self,
             health: int,
-            enemy_pool: list[Enemy],
-            max_enemy_count: int,
             enemy_spawn_amount: int,
             enemy_spawn_delay: float,
             activation_delay: float,
@@ -22,26 +22,24 @@ class EnemySpawner(SpatialObject):
         kwargs["radius"] = 30.0
         super().__init__(**kwargs)
         self.health: int = health
-        self.enemy_pool = enemy_pool
-        self.max_enemy_count: int = max_enemy_count  # The maximum amount of enemies that `pool` can have.
         self.spawn_amount: int = enemy_spawn_amount  # The amount of enemies being spawned at once per spawn cycle.
         self.enemy_spawn_delay: float = enemy_spawn_delay  # The delay in seconds between spawn cycles.
         self.activation_delay: float = activation_delay  # The duration that this spawner will sleep before activating.
         self.__ready_tick: int = pygame.time.get_ticks()
         self.__last_spawn_tick: int = 0
 
-    def update(self, delta: float, events: list[Event]) -> None:
+    def update(self, delta: float, events: list[Event], enemy_pool: EnemyPool) -> None:
         current_tick: int = pygame.time.get_ticks()
         active: bool = (current_tick - self.__ready_tick) / 1000.0 >= self.activation_delay
         spawn_ready: bool = (current_tick - self.__last_spawn_tick) / 1000.0 >= self.enemy_spawn_delay
-        if active and spawn_ready and len(self.enemy_pool) < self.max_enemy_count:
+        if active and spawn_ready:
             self.__last_spawn_tick = current_tick
             for _ in range(self.spawn_amount):
                 new_enemy: Enemy = Enemy(
                         health=ENEMY_HEALTH,
                         speed=ENEMY_SPEED,
                         position=self.position.copy())
-                self.enemy_pool.append(new_enemy)
+                enemy_pool.add(new_enemy)
         super().update(delta, events)
 
 
@@ -65,4 +63,17 @@ class Enemy(KinematicObject):
         self.rotation = -self.velocity.as_polar()[1] - 90
 
         if pygame.sprite.collide_circle(self, player):
-            print("Ouch!")
+            print("Ouch!")  # TODO: Implement this.
+
+
+class EnemyPool(Group):
+    def __init__(self,
+            max_size: int,
+            *objects: Any | AbstractGroup | Iterable
+    ) -> None:
+        self.max_size: int = max_size
+        super().__init__(*objects)
+    
+    def add(self, *sprites: Any | AbstractGroup | Iterable) -> None:
+        if len(self.objects()) < self.max_size:
+            super().add(*sprites)

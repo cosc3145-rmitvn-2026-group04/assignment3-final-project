@@ -1,8 +1,10 @@
+from typing import Any, Iterable, List
+
 import pygame
 from pygame import Surface, Rect
 from pygame.math import Vector2
 from pygame.event import Event
-from pygame.sprite import AbstractGroup, Sprite
+from pygame.sprite import AbstractGroup, Group as PygameSpriteGroup, Sprite
 from part2.engine.config import (
         COLOR_RENDER_DEBUG_BOUNDING_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_CIRCLE,
@@ -67,7 +69,8 @@ class SpatialObject(GameObject, Sprite):
         per frame due to its custom rendering logic. USING
         `pygame.sprite.Group.draw()` WILL RESULT IN INCORRECT OUTPUT.
         """
-        super().__init__(*groups)
+        GameObject.__init__(self)
+        Sprite.__init__(self, *groups)
         self.position: Vector2 = position if position else Vector2(0, 0)
         self.rotation: float = rotation
         self.scale: Vector2 = scale if scale else Vector2(1, 1)
@@ -174,4 +177,28 @@ class KinematicObject(SpatialObject):
     def move(self, delta: float) -> None:
         self.velocity += self.acceleration * delta
         self.position += self.velocity * delta
-    
+        
+
+class Group(PygameSpriteGroup):
+    def __init__(self, *game_objects: Any | AbstractGroup | Iterable) -> None:
+        """
+        Thin wrapper for `pygame.sprite.Group` with logic for custom classes in
+        this project.
+        """
+        super().__init__(*game_objects)
+   
+    def objects(self) -> List: 
+        """Returns a list of objects in the group"""
+        return super().sprites()
+
+    def draw(self, surface: Surface, *args, **kwargs) -> List[Rect]:
+        # Overload pygame.sprite.Group.draw() behavior.
+        for obj in self.objects():
+            if hasattr(obj, "draw") and callable(getattr(obj, "draw")):
+                obj.draw(surface, *args, **kwargs)
+
+        # This is what pygame does in pygame.sprite.Group.draw() to set the
+        # correct state and return value. Do not modify.
+        self.lostsprites = []
+        dirty = self.lostsprites
+        return dirty
