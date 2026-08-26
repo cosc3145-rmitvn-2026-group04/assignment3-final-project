@@ -9,6 +9,7 @@ from pathlib import Path
 
 class Player(KinematicObject):
     def __init__(self, health: int, speed: int, bullets_list: list, angular_speed: float, **kwargs):
+        kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_player.png"))
         super().__init__(**kwargs)
         self.health: int = health
         self.speed: int = speed
@@ -32,11 +33,10 @@ class Player(KinematicObject):
         event: Event
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                new_bullet = Bullet(
-                    speed = BULLET_SPEED,
+                new_bullet = PlayerBullet(
+                    speed = PLAYER_BULLET_SPEED,
                     position = Vector2(self.position),
                     rotation = self.rotation,
-                    image=pygame.image.load(Path("src/part2/assets/sprite_bullet.png"))
                 )
                 new_bullet.ready()
                 self.bullets_list.append(new_bullet)
@@ -47,9 +47,10 @@ class Player(KinematicObject):
     def free(self) -> None:
         pass
 
-class Bullet(KinematicObject):
-    def __init__(self, speed: int, **kwargs ):
-        super().__init__( **kwargs)
+class PlayerBullet(KinematicObject):
+    def __init__(self, speed: int, **kwargs):
+        kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_bullet.png"))
+        super().__init__(**kwargs)
         self.speed: int = speed
         
     def ready(self) -> None:

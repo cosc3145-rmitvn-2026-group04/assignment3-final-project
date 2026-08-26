@@ -3,7 +3,7 @@ import pygame
 from pygame.math import Vector2
 from pygame.event import Event
 from game.config import *
-from game.player import Player, Bullet
+from game.player import Player, PlayerBullet
 from game.enemy import EnemySpawner
 
 def main():
@@ -13,7 +13,7 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("consolas", 22)
     
-    bullets: list[Bullet] = []
+    bullets: list[PlayerBullet] = []
 
     player: Player = Player(
             health=PLAYER_HEALTH,
@@ -22,7 +22,6 @@ def main():
             position=Vector2(WIDTH // 2, HEIGHT // 2),
             radius=12.0,
             offset=Vector2(0, 4),
-            image=pygame.image.load(Path("src/part2/assets/sprite_player.png")),
             bullets_list = bullets
             )
     player.ready()
@@ -60,7 +59,6 @@ def main():
         for enemy in enemy_spawner.enemy_pool:
             enemy.draw(screen)
         player.draw(screen)
-        enemy.draw(screen)
         pygame.display.flip()
 
     player.free()
