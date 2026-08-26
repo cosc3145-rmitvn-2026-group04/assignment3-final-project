@@ -5,10 +5,17 @@ from pygame.math import Vector2
 from pygame.sprite import AbstractGroup
 from pygame.key import ScancodeWrapper
 from pygame.event import Event
-from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT
+from part2.config import (
+        ASSET_DIR,
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        MAIN_HUD_HEIGHT)
 from part2.engine.core import KinematicObject, Group
 import part2.game.enemy as enemy
-from part2.game.config import PLAYER_BULLET_SPEED, PLAYER_INVULNERABLE_COOLDOWN_DURATION
+from part2.game.config import (
+        PLAYER_BULLET_SPEED,
+        PLAYER_SHOOTING_COOLDOWN,
+        PLAYER_INVULNERABLE_COOLDOWN_DURATION)
 
 
 class Player(KinematicObject):
@@ -18,6 +25,8 @@ class Player(KinematicObject):
         self.health: int = health
         self.speed: float = speed
         self.angular_speed: float = angular_speed
+        self.shooting_enabled: bool = True
+        self.last_shot_tick: int = pygame.time.get_ticks()
         self.invulnerable: bool = False
         self.last_invulnerable_tick: int = pygame.time.get_ticks()
 
@@ -31,24 +40,29 @@ class Player(KinematicObject):
             self.rotation += self.angular_speed * delta
         if pressed_keys[pygame.K_RIGHT] or pressed_keys[pygame.K_d]:
             self.rotation -= self.angular_speed * delta
-
-        event: Event
-        for event in events:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                new_bullet = PlayerBullet(
-                    speed = PLAYER_BULLET_SPEED,
-                    position = Vector2(self.position),
-                    rotation = self.rotation,
-                )
-                bullet_pool.add(new_bullet)
+        if pressed_keys[pygame.K_SPACE] and self.shooting_enabled:
+            self.shooting_enabled = False
+            self.last_shot_tick = pygame.time.get_ticks()
+            new_bullet = PlayerBullet(
+                speed = PLAYER_BULLET_SPEED,
+                position = Vector2(self.position),
+                rotation = self.rotation,
+            )
+            bullet_pool.add(new_bullet)
 
         self.move(delta)
         self._limit_screen_bound()
         super().update(delta, events)
 
-        if self.invulnerable:
-            current_tick: int = pygame.time.get_ticks()
+        current_tick: int = pygame.time.get_ticks()
 
+        if (
+            not self.shooting_enabled
+            and (current_tick - self.last_shot_tick) / 1000.0 >= PLAYER_SHOOTING_COOLDOWN
+        ):
+            self.shooting_enabled = True
+
+        if self.invulnerable:
             if (current_tick - self.last_invulnerable_tick) / 1000.0 < 0.1:
                 self.scale = Vector2(0.9, 0.9)
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_player_hurt.png")
