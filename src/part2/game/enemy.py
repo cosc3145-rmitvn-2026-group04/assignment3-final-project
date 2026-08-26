@@ -4,10 +4,14 @@ import pygame
 from pygame.math import Vector2
 from pygame.sprite import AbstractGroup
 from pygame.event import Event
-from part2.config import ASSET_DIR
+from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT
 from part2.engine.core import SpatialObject, KinematicObject, Group
 from part2.game.player import Player
-from part2.game.config import ENEMY_HEALTH, ENEMY_SPEED
+from part2.game.config import (
+        ENEMY_HEALTH,
+        ENEMY_SPEED,
+        ENEMY_SEPARATION_ACTIVATE_RADIUS,
+        ENEMY_SEPARATION_FORCE_WEIGHT)
 
 
 class EnemySpawner(SpatialObject):
@@ -46,24 +50,58 @@ class EnemySpawner(SpatialObject):
 class Enemy(KinematicObject):
     def __init__(self, health: int, speed: int, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy.png")
-        kwargs["radius"] = 9.5
+        kwargs["radius"] = 10.0
         super().__init__(**kwargs)
         self.health: int = health
         self.speed: int = speed
 
-    def update(self, delta: float, events: list[Event], player: Player) -> None:
-        desired_velocity: Vector2 = player.position - self.position
-        if desired_velocity.length_squared() > 0.0:
-            desired_velocity.clamp_magnitude_ip(self.speed, self.speed)
-        steering_force: Vector2 = desired_velocity - self.velocity
-        self.acceleration = steering_force / self.mass
+    def update(self,
+            delta: float,
+            events: list[Event],
+            player: Player,
+            enemy_pool: EnemyPool
+    ) -> None:
+        self.acceleration = self._get_seek_force(player.position)
+        self.acceleration += self._get_separation_force(enemy_pool)
 
         self.move(delta)
+        self._limit_screen_bound()
         super().update(delta, events)
         self.rotation = -self.velocity.as_polar()[1] - 90
 
         if pygame.sprite.collide_circle(self, player):
             print("Ouch!")  # TODO: Implement this.
+    
+    def _get_seek_force(self, target_position: Vector2) -> Vector2:
+        desired_velocity: Vector2 = target_position - self.position
+        if desired_velocity.length_squared() > 0.0:
+            desired_velocity.clamp_magnitude_ip(self.speed, self.speed)
+        return desired_velocity - self.velocity
+    
+    def _get_separation_force(self, enemy_pool: EnemyPool) -> Vector2:
+        r: Vector2 = Vector2(0, 0)
+        neighbor: Enemy
+        for neighbor in enemy_pool.objects():
+            if not self is neighbor:
+                to_neighbor: Vector2 = self.position - neighbor.position
+                distance_to_neighbor: float = to_neighbor.length()
+                if 0.0 < distance_to_neighbor <= ENEMY_SEPARATION_ACTIVATE_RADIUS:
+                    separation_force: Vector2 = (
+                        to_neighbor
+                        * ENEMY_SEPARATION_FORCE_WEIGHT
+                        / distance_to_neighbor
+                    )
+                    r += separation_force
+        return r
+    
+    def _limit_screen_bound(self) -> None:
+        x: float
+        y: float
+        x, y = self.position.x, self.position.y
+        x = pygame.math.clamp(x, self.radius, WINDOW_WIDTH - self.radius)
+        y = pygame.math.clamp(y, self.radius, WINDOW_HEIGHT - self.radius)
+        if x != self.position.x or y != self.position.y:
+            self.position = Vector2(x, y)
 
 
 class EnemyPool(Group):

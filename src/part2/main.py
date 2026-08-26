@@ -36,12 +36,12 @@ def main():
     enemy_spawner: EnemySpawner = EnemySpawner(
             health=ENEMY_SPAWNER_HEALTH,
             enemy_spawn_amount=1,
-            enemy_spawn_delay=5.0,
+            enemy_spawn_delay=1.0,
             activation_delay=3.0,
             position=Vector2(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2),
             radius=30.0)
         
-    running = True
+    running: bool = True
     while running:
         delta: float = clock.tick_busy_loop(FPS) / 1000.0
         screen.fill(COLOR_BACKGROUND)
@@ -54,11 +54,11 @@ def main():
         player.update(delta, events, player_bullet_pool)
         player_bullet_pool.update(delta, events)
         enemy_spawner.update(delta, events, enemy_pool)
-        enemy_pool.update(delta, events, player)
+        enemy_pool.update(delta, events, player, enemy_pool)
 
         player_bullet_pool.draw(screen)
         enemy_spawner.draw(screen)
-        enemy_pool.draw(screen)
+        enemy_pool.draw(screen, debug_bounding_circle=True, debug_velocity=True, debug_acceleration=True)
         player.draw(screen)
 
         pygame.display.flip()
