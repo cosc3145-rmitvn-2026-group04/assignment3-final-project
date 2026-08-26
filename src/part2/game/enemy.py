@@ -1,11 +1,11 @@
 from __future__ import annotations
-from pathlib import Path
 import pygame
 from pygame.math import Vector2
 from pygame.event import Event
-from engine.core import SpatialObject, KinematicObject
-from game.player import Player
-from game.config import *
+from part2.config import ASSET_DIR
+from part2.engine.core import SpatialObject, KinematicObject
+from part2.game.player import Player
+from part2.game.config import ENEMY_HEALTH, ENEMY_SPEED
 
 
 class EnemySpawner(SpatialObject):
@@ -18,7 +18,7 @@ class EnemySpawner(SpatialObject):
             activation_delay: float,
             **kwargs
     ):
-        kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_enemy_spawner.png"))
+        kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy_spawner.png")
         kwargs["radius"] = 30.0
         super().__init__(**kwargs)
         self.health: int = health
@@ -47,7 +47,7 @@ class EnemySpawner(SpatialObject):
 
 class Enemy(KinematicObject):
     def __init__(self, health: int, speed: int, **kwargs):
-        kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_enemy.png"))
+        kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy.png")
         kwargs["radius"] = 9.5
         super().__init__(**kwargs)
         self.health: int = health

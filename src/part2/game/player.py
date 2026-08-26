@@ -2,14 +2,14 @@ import pygame
 from pygame.math import Vector2
 from pygame.key import ScancodeWrapper
 from pygame.event import Event
-from engine.core import KinematicObject
-from game.config import *
-from pathlib import Path
+from part2.config import ASSET_DIR
+from part2.engine.core import KinematicObject
+from part2.game.config import PLAYER_BULLET_SPEED
 
 
 class Player(KinematicObject):
     def __init__(self, health: int, speed: int, bullets_list: list, angular_speed: float, **kwargs):
-        kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_player.png"))
+        kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player.png")
         super().__init__(**kwargs)
         self.health: int = health
         self.speed: int = speed
@@ -43,7 +43,8 @@ class Player(KinematicObject):
 
 class PlayerBullet(KinematicObject):
     def __init__(self, speed: int, **kwargs):
-        kwargs["image"] = pygame.image.load(Path("src/part2/assets/sprite_bullet.png"))
+        kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_bullet.png")
+        kwargs["radius"] = 4.0
         super().__init__(**kwargs)
         self.speed: int = speed
 

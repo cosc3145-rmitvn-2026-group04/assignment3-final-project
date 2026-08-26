@@ -3,7 +3,7 @@ from pygame import Surface, Rect
 from pygame.math import Vector2
 from pygame.event import Event
 from pygame.sprite import AbstractGroup, Sprite
-from engine.config import (
+from part2.engine.config import (
         COLOR_RENDER_DEBUG_BOUNDING_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_CIRCLE,
         COLOR_RENDER_DEBUG_VELOCITY,
