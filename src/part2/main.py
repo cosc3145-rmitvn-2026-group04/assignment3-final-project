@@ -53,7 +53,6 @@ def main():
         enemy_spawner.update(delta, events)
         for enemy in enemy_spawner.enemy_pool:
             enemy.update(delta, events, player)
-        enemy.update(delta, events, player=player)
 
         for bullet in bullets:
             bullet.draw(screen)
