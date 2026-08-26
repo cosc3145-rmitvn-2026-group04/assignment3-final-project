@@ -7,16 +7,18 @@ from pygame.key import ScancodeWrapper
 from pygame.event import Event
 from part2.config import ASSET_DIR, WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT
 from part2.engine.core import KinematicObject, Group
-from part2.game.config import PLAYER_BULLET_SPEED
+from part2.game.config import PLAYER_BULLET_SPEED, PLAYER_INVULNERABLE_COOLDOWN_DURATION
 
 
 class Player(KinematicObject):
-    def __init__(self, health: int, speed: int, angular_speed: float, **kwargs):
+    def __init__(self, health: int, speed: float, angular_speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player.png")
         super().__init__(**kwargs)
         self.health: int = health
-        self.speed: int = speed
+        self.speed: float = speed
         self.angular_speed: float = angular_speed
+        self.invulnerable: bool = False
+        self.last_invulnerable_tick: int = pygame.time.get_ticks()
 
     def update(self, delta: float, events: list[Event], bullet_pool: PlayerBulletPool) -> None:
         self.velocity = Vector2(0, 0)
@@ -43,6 +45,17 @@ class Player(KinematicObject):
         self._limit_screen_bound()
         super().update(delta, events)
 
+        if self.invulnerable:
+            current_tick: int = pygame.time.get_ticks()
+            if (current_tick - self.last_invulnerable_tick) / 1000.0 > PLAYER_INVULNERABLE_COOLDOWN_DURATION:
+                self.invulnerable = False
+
+    def hurt(self) -> None:
+        if self.health > 0:
+            self.health -= 1
+        self.invulnerable = True
+        self.last_invulnerable_tick = pygame.time.get_ticks()
+
     def _limit_screen_bound(self) -> None:
         x: float
         y: float
@@ -54,12 +67,12 @@ class Player(KinematicObject):
 
 
 class PlayerBullet(KinematicObject):
-    def __init__(self, speed: int, **kwargs):
+    def __init__(self, speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player_bullet.png")
         kwargs["radius"] = 4.0
         kwargs["offset"] = Vector2(0, -4)
         super().__init__(**kwargs)
-        self.speed: int = speed
+        self.speed: float = speed
 
         direction = Vector2(0, -1).rotate(-self.rotation)
         self.velocity = direction * self.speed

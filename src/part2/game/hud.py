@@ -1,9 +1,10 @@
+import pygame
 from pygame import Rect, Surface
 from pygame.math import Vector2
 from pygame.event import Event
 from pygame.font import Font
 from part2.engine.core import UserInterface
-from part2.game.config import PLAYER_HEALTH
+from part2.game.config import PLAYER_HEALTH, PLAYER_INVULNERABLE_COOLDOWN_DURATION
 from part2.game.player import Player
 from part2.config import (
         WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -24,14 +25,22 @@ class MainHUD(UserInterface):
         self.surface.fill(COLOR_MAIN_HUD_BACKGROUND)
 
         player_hp: int = self.player.health
-        player_hp_bar_fill_text: str = "▌" * player_hp
+        player_hp_bar_fill_text: str = "•" * player_hp
         player_hp_bar_null_text: str = " " * (PLAYER_HEALTH - player_hp)
-        player_hp_text: str = "HP %s%s %d" % (
+        player_hp_text: str = "HP [%s%s] %d %s" % (
             player_hp_bar_fill_text,
             player_hp_bar_null_text,
             player_hp,
+            (
+                "(INVULN %.1f)" % (
+                    PLAYER_INVULNERABLE_COOLDOWN_DURATION
+                    - (pygame.time.get_ticks() - self.player.last_invulnerable_tick) / 1000.0
+                )
+                if self.player.invulnerable
+                else ""
+            )
         )
-        player_hp_label: Surface = self.fonts["h1"].render(
+        player_hp_label: Surface = self.fonts["h2"].render(
                 player_hp_text,
                 True, COLOR_MAIN_HUD_FOREGROUND)
         self.surface.blit(player_hp_label, Vector2(20, 20))

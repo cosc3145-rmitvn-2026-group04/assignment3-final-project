@@ -70,7 +70,8 @@ class Enemy(KinematicObject):
         self.rotation = -self.velocity.as_polar()[1] - 90
 
         if pygame.sprite.collide_circle(self, player):
-            print("Ouch!")  # TODO: Implement this.
+            if not player.invulnerable:
+                player.hurt()
 
     def _get_seek_force(self, target_position: Vector2) -> Vector2:
         desired_velocity: Vector2 = target_position - self.position
