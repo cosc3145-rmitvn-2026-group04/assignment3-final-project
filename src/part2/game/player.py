@@ -45,8 +45,9 @@ class Player(KinematicObject):
 
 class PlayerBullet(KinematicObject):
     def __init__(self, speed: int, **kwargs):
-        kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_bullet.png")
+        kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player_bullet.png")
         kwargs["radius"] = 4.0
+        kwargs["offset"] = Vector2(0, -4)
         super().__init__(**kwargs)
         self.speed: int = speed
 
