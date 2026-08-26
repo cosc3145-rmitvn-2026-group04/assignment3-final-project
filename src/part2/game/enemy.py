@@ -29,13 +29,16 @@ class EnemySpawner(SpatialObject):
         self.enemy_spawn_delay: float = enemy_spawn_delay  # The delay in seconds between spawn cycles.
         self.activation_delay: float = activation_delay  # The duration that this spawner will sleep before activating.
         self.__ready_tick: int = pygame.time.get_ticks()
-        self.__last_spawn_tick: int = 0
+        self.__last_spawn_tick: int = pygame.time.get_ticks()
+        self.__first_spawn: bool = True
 
     def update(self, delta: float, events: list[Event], enemy_pool: EnemyPool) -> None:
         current_tick: int = pygame.time.get_ticks()
         active: bool = (current_tick - self.__ready_tick) / 1000.0 >= self.activation_delay
         spawn_ready: bool = (current_tick - self.__last_spawn_tick) / 1000.0 >= self.enemy_spawn_delay
-        if active and spawn_ready:
+        if active and (spawn_ready or self.__first_spawn):
+            if self.__first_spawn:
+                self.__first_spawn = False
             self.__last_spawn_tick = current_tick
             for _ in range(self.spawn_amount):
                 new_enemy: Enemy = Enemy(
@@ -43,6 +46,11 @@ class EnemySpawner(SpatialObject):
                         position=self.position.copy())
                 enemy_pool.add(new_enemy)
         super().update(delta, events)
+
+
+class EnemySpawnerPool(Group):
+    def __init__(self, *game_objects: Any | AbstractGroup | Iterable) -> None:
+        super().__init__(*game_objects)
 
 
 class Enemy(KinematicObject):
