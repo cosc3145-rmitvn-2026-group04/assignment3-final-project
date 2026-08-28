@@ -21,6 +21,7 @@ Assignment overview: https://rmit.instructure.com/courses/171534/assignments/124
 ```yaml
 📂.
 ├── 📂src/              # Source code
+│   ├── 📂common/       # Source code - Common classes and utilities
 │   ├── 📂part1/        # Source code - Assignment Part 1
 │   └── 📂part2/        # Source code - Assignment Part 2
 ├── .gitignore
@@ -58,3 +59,27 @@ pip install -r requirements.txt
 ```
 
 ## Run
+
+### Part 1
+
+```
+python -m src.part1.main
+```
+
+or
+
+```
+python ./src/part1/main.py
+```
+
+### Part 2
+
+```
+python -m src.part2.main
+```
+
+or
+
+```
+python ./src/part2/main.py
+```
