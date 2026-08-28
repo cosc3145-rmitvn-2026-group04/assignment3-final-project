@@ -10,7 +10,7 @@ from part2.config import (
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT)
-from part2.engine.core import KinematicObject, Group
+from common.engine.core import KinematicObject, Group
 import part2.game.enemy as enemy
 from part2.game.config import (
         PLAYER_BULLET_SPEED,

@@ -1,4 +1,4 @@
-# RMIT2026A - COSC3145 Games and Artificial Intelligence Techniques 
+# RMIT2026A - COSC3145 Games and Artificial Intelligence Techniques
 
 Course information: [https://handbook.rmit.edu.au/ords/r/rmit/catalogue/class?p8_code=045680&p8_class_guide_course_of_code=COSC3066&p8_class_guide_class_nbr=1391&p8_class_guide_term_descr=Vietnam%20Semester%202](https://handbook.rmit.edu.au/ords/r/rmit/catalogue/class?p8_code=045680&p8_class_guide_course_of_code=COSC3066&p8_class_guide_class_nbr=1391&p8_class_guide_term_descr=Vietnam%20Semester%202)
 
@@ -55,3 +55,6 @@ deactivate
 
 ```powershell
 pip install -r requirements.txt
+```
+
+## Run
