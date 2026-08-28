@@ -102,7 +102,9 @@ def evaluate():
     done = False
     running = True
 
-    environment.render("Evaluating policy | Esc: quit | R: replay")
+    environment.render(
+        "Evaluating learned policy\nR: replay | Esc: quit"
+    )
     clock = pygame.time.Clock()
 
     while running:
@@ -126,13 +128,13 @@ def evaluate():
 
         if done:
             message = (
-                f"Complete | reward={total_reward} | steps={steps_taken} "
-                "| R: replay | Esc: quit"
+                f"Complete | Reward: {total_reward} | Steps: {steps_taken}\n"
+                "R: replay | Esc: quit"
             )
         else:
             message = (
-                f"Evaluating | reward={total_reward} | steps={steps_taken} "
-                "| Esc: quit"
+                f"Evaluating | Reward: {total_reward} | Steps: {steps_taken}\n"
+                "R: replay | Esc: quit"
             )
 
         environment.render(message)
@@ -151,7 +153,9 @@ def manual():
     done = False
     running = True
 
-    environment.render("Arrow keys: move | R: reset | Esc: quit")
+    environment.render(
+        "Manual mode\nArrow keys: move | R: reset | Esc: quit"
+    )
     clock = pygame.time.Clock()
 
     while running:
@@ -174,13 +178,13 @@ def manual():
 
         if done:
             message = (
-                f"Complete | Reward: {total_reward} | Steps: {steps_taken} "
-                "| R: reset"
+                f"Complete | Reward: {total_reward} | Steps: {steps_taken}\n"
+                "R: reset | Esc: quit"
             )
         else:
             message = (
-                f"Manual | Reward: {total_reward} | Steps: {steps_taken} "
-                "| Press arrow keys to move | R: reset | Esc: quit"
+                f"Manual | Reward: {total_reward} | Steps: {steps_taken}\n"
+                "Arrow keys: move | R: reset | Esc: quit"
             )
 
         environment.render(message)

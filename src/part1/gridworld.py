@@ -3,6 +3,8 @@ from .assets import AssetManager
 
 from .config import TILE_SIZE
 
+HUD_HEIGHT = 80
+
 ACTION_DELTAS = {
     0: (-1, 0),  # up
     1: (1, 0),   # down
@@ -82,7 +84,10 @@ class GridWorld:
         if self.screen is None:
             pygame.init()
             self.screen = pygame.display.set_mode(
-                (self.cols * TILE_SIZE, self.rows * TILE_SIZE + 40)
+                (
+                    self.cols * TILE_SIZE,
+                    self.rows * TILE_SIZE + HUD_HEIGHT,
+                )
             )
             pygame.display.set_caption("Level 0 Q-Learning")
 
@@ -128,9 +133,18 @@ class GridWorld:
         )
         self.screen.blit(player_sprite, player_rectangle)
 
-        font = pygame.font.Font(None, 26)
-        text = font.render(message, True, (255, 255, 255))
-        self.screen.blit(text, (10, self.rows * TILE_SIZE + 10))
+        font = pygame.font.SysFont("consolas", 26)
+        text_y = self.rows * TILE_SIZE + 8
+
+        for line_number, line in enumerate(message.splitlines()):
+            text_surface = font.render(line, True, (255, 255, 255))
+            self.screen.blit(
+                text_surface,
+                (
+                    10,
+                    text_y + line_number * font.get_linesize(),
+                ),
+            )
 
         pygame.display.flip()
 
