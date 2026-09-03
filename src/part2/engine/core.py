@@ -6,7 +6,7 @@ from pygame.math import Vector2
 from pygame.event import Event
 from pygame.font import Font
 from pygame.sprite import AbstractGroup, Group as PygameSpriteGroup, Sprite
-from part2.common.engine.config import (
+from part2.engine.config import (
         COLOR_RENDER_DEBUG_IMAGE_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_RECT,
         COLOR_RENDER_DEBUG_BOUNDING_CIRCLE,
