@@ -12,7 +12,7 @@ from part2.config import (
         WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT,
         COLOR_RED)
-from part2.common.engine.core import SpatialObject, KinematicObject, Group
+from part2.engine.core import SpatialObject, KinematicObject, Group
 import part2.game.player as player
 from part2.game.config import (
         ENEMY_SPEED,

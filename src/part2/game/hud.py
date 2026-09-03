@@ -3,7 +3,7 @@ from pygame import Rect, Surface
 from pygame.math import Vector2
 from pygame.event import Event
 from pygame.font import Font
-from part2.common.engine.core import UserInterface
+from part2.engine.core import UserInterface
 from part2.game.config import PLAYER_HEALTH, PLAYER_INVULNERABLE_COOLDOWN_DURATION
 from part2.game.game import Game, GameStatus
 from part2.config import (
