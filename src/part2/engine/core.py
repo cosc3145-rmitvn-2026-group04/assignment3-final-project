@@ -1,5 +1,4 @@
 from typing import Any, Iterable, List
-
 import pygame
 from pygame import Surface, Rect
 from pygame.math import Vector2
