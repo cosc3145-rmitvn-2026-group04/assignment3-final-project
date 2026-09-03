@@ -45,9 +45,20 @@ class MainHUD(UserInterface):
                 True, COLOR_MAIN_HUD_FOREGROUND)
         self.surface.blit(player_hp_label, Vector2(20, 20))
 
-        if self.game.status != GameStatus.GAME_ONGOING:
+        phase_name: str = self.game.phase_data["phase_name"]
+        if self.game.status == GameStatus.GAME_ONGOING:
+            phase_label: Surface = self.fonts["h2"].render(
+                "PHASE %s" % phase_name,
+                True, COLOR_MAIN_HUD_FOREGROUND)
+            self.surface.blit(
+                    phase_label,
+                    Vector2(WINDOW_WIDTH - phase_label.get_width() - 20, 20))
+        else:
             game_result_label: Surface = self.fonts["h2"].render(
-                "GAME WON" if self.game.status == GameStatus.GAME_WON else "GAME LOST",
+                (
+                    "GAME WON" if self.game.status == GameStatus.GAME_WON
+                    else "PHASE %s LOST" % phase_name
+                ),
                 True, COLOR_MAIN_HUD_FOREGROUND)
             self.surface.blit(
                     game_result_label,

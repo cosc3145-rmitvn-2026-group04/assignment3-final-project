@@ -11,7 +11,7 @@ from pygame.math import Vector2
 from pygame.font import SysFont, Font
 from pygame.event import Event
 from part2.game.phase import get_phases
-from part2.game.game import Game
+from part2.game.game import Game, GameStatus
 from part2.game.hud import MainHUD
 from part2.config import (
         WINDOW_WIDTH,
@@ -44,46 +44,56 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         "xsmall": SysFont("Consolas", 12, False),
     }
 
-    game: Game = Game()
+    phase_index: int
+    for phase_index in range(start_phase, len(phases["phases"])):
+        game: Game = Game(phases["phases"][phase_index])
+        main_hud: MainHUD = MainHUD(fonts, game)
 
-    debug_render: bool = False
-    main_hud: MainHUD = MainHUD(fonts, game)
+        debug_render: bool = False
+        running: bool = True
+        while running:
+            # ====== Frame Setup =======
+            delta: float = clock.tick_busy_loop(FPS) / 1000.0
+            screen.fill(COLOR_BACKGROUND)
+            # ==========================
 
-    running: bool = True
-    while running:
-        # ====== Setup =======
-        delta: float = clock.tick_busy_loop(FPS) / 1000.0
-        screen.fill(COLOR_BACKGROUND)
-        # ====================
+            # === Frame Global Input ===
+            events: list[Event] = pygame.event.get()
+            for event in events:
+                if (
+                    event.type == pygame.QUIT
+                    or (
+                        event.type == pygame.KEYDOWN
+                        and event.key == pygame.K_ESCAPE
+                    )
+                ):
+                    running = False
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                    debug_render = not debug_render
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                    game.reset()
+            # ==========================
 
-        # === Global Input ===
-        events: list[Event] = pygame.event.get()
-        for event in events:
+            # ====== Frame Update ======
+            game.update(delta, events)
+            main_hud.update(delta, events)
             if (
-                event.type == pygame.QUIT
-                or (
-                   event.type == pygame.KEYDOWN
-                   and event.key == pygame.K_ESCAPE
-                )
+                game.game_over
+                and game.status == GameStatus.GAME_WON
+                and phase_index < len(phases["phases"]) - 1
             ):
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
-                debug_render = not debug_render
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-                game.reset()
-        # ====================
+                break
+            # ==========================
 
-        # ====== Update ======
-        game.update(delta, events)
-        main_hud.update(delta, events)
-        # ====================
+            # ======= Frame Draw =======
+            game.render(screen, fonts, debug_render)
+            main_hud.draw(screen)
 
-        # ======= Draw =======
-        game.render(screen, fonts, debug_render)
-        main_hud.draw(screen)
+            pygame.display.flip()
+            # ==========================
 
-        pygame.display.flip()
-        # ====================
+        if not running:
+            break
 
     pygame.quit()
 
@@ -112,12 +122,15 @@ def main() -> None:
     args: Namespace = arg_parser.parse_args()
 
     phases: dict[str, Any] = get_phases()
-    if args.mode == "train":
-        train(phases=phases, output=Path(args.model_path))
-    elif args.mode == "evaluate":
-        evaluate(phases=phases, input=Path(args.model_path))
-    elif args.mode == "play":
-        play(phases=phases, start_phase=args.start_phase)
+    match args.mode:
+        case "train":
+            train(phases=phases, output=Path(args.model_path))
+        case "evaluate":
+            evaluate(phases=phases, input=Path(args.model_path))
+        case "play":
+            if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
+                raise RuntimeError("Invalid start phase specified.")
+            play(phases=phases, start_phase=args.start_phase)
 
 
 if __name__ == "__main__":
