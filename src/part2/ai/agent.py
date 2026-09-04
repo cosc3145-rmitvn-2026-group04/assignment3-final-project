@@ -14,4 +14,4 @@ class PlayerControllerAI(PlayerController):
     ) -> None:
         super().update(delta, events, *args, **kwargs)
         if self.player and action != Action.NONE:
-            self.player.apply_action(delta, action)
+            self.player.apply_action(action)
