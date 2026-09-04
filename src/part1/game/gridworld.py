@@ -21,6 +21,8 @@ class GridWorld:
         self.rocks = set()
         self.initial_apples = set()
         self.start_position = None
+        self.key_pos = None
+        self.chest_pos = None
         self.screen = None
         self.assets = None
         self.player_direction = "down"
@@ -33,6 +35,10 @@ class GridWorld:
                     self.initial_apples.add((row, col))
                 elif tile == "S":
                     self.start_position = (row, col)
+                elif tile == "K":
+                    self.key_pos = (row, col)
+                elif tile == "C":
+                    self.chest_pos = (row, col)
 
         if self.start_position is None:
             raise ValueError("Level requires a starting tile")
@@ -43,12 +49,16 @@ class GridWorld:
         self.player_position = self.start_position
         self.player_direction = "down"
         self.apples = set(self.initial_apples)
+        self.has_key = False
+        self.chest_open = False
         return self.get_state()
 
     def get_state(self):
         return (
             self.player_position,
             tuple(sorted(self.apples)),
+            self.has_key,
+            self.chest_open,
         )
 
     def step(self, action):
@@ -71,12 +81,28 @@ class GridWorld:
             self.player_position = destination
 
         reward = 0
+        done = False
 
+        # pickup apple
         if self.player_position in self.apples:
             self.apples.remove(self.player_position)
             reward = 1
 
-        done = len(self.apples) == 0
+        # done = len(self.apples) == 0
+        
+        # pickup key
+        if self.key_pos and self.player_position == self.key_pos and not self.has_key:
+            self.has_key = True
+            reward += 2.0
+
+        # pickup chest
+        if self.chest_pos and self.player_position == self.chest_pos:
+            if self.has_key:
+                self.chest_open = True
+                reward += 10.0
+                done = True
+            else:
+                reward -= 0.5  # small penalty for visiting locked chest early
 
         return self.get_state(), reward, done, {}
 
@@ -104,19 +130,33 @@ class GridWorld:
                     TILE_SIZE,
                     TILE_SIZE,
                 )
+                pos = (row, col)
 
-                if (row, col) in self.rocks:
+                if pos in self.rocks:
                     pygame.draw.rect(self.screen, (80, 80, 80), rectangle)
                     rock_rectangle = self.assets.rock.get_rect(
                         center=rectangle.center
                     )
                     self.screen.blit(self.assets.rock, rock_rectangle)
 
-                if (row, col) in self.apples:
+                if pos in self.apples:
                     apple_rectangle = self.assets.apple.get_rect(
                         center=rectangle.center
                     )
                     self.screen.blit(self.assets.apple, apple_rectangle)
+                    
+                # TODO: draw key
+                # if pos == self.key_pos and not self.has_key:
+                #     if hasattr(self.assets, "key"):
+                #         self.screen.blit(self.assets.key, self.assets.key.get_rect(center = rectangle.center))
+                
+                # TODO: draw chest
+                # if pos == self.chest_pos:
+                #     if self.chest_open:
+                #         chest_sprite = self.assets.chest_open 
+                #     else:
+                #         chest_sprite = self.assets.chest_closed
+                #     self.screen.blit(chest_sprite, chest_sprite.get_rect(center = rectangle.center))
 
         player_row, player_col = self.player_position
         animation_index = (

@@ -10,12 +10,10 @@ class SARSAAgent(RLAgent):
         next_action: int, 
         done: bool
         ) -> None:
-        values = self.get_values(state)
+        current_q = self.get_q_value(state, action)
         
-        old_value = values[action]
-
         target = reward
         if not done:
-            target += self.gamma * self.get_values(next_state)[next_action]
+            target += self.gamma * self.get_q_value(next_state, next_action)
 
-        values[action] += self.alpha * (target - old_value)
+        self.q_table[state][action] += self.alpha * (target - current_q)

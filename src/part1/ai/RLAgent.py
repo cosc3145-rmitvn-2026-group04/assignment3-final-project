@@ -39,6 +39,10 @@ class RLAgent:
     def load(self, filename):
         with Path(filename).open("rb") as file:
             self.q_table = pickle.load(file)
+            
+    def get_q_value(self, state, action: int) -> float:
+        """ return Q(state, action) directly."""
+        return self.get_values(state)[action]
     
 def linear_epsilon(episode: int, total_episodes: int, start: float, end: float) -> float:
     if total_episodes <= 1:
