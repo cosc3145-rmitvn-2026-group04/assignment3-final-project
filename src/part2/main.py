@@ -34,7 +34,7 @@ def evaluate(phases: dict[str, Any], input: Path | None = None) -> None:
 
 def play(phases: dict[str, Any], start_phase: int = 0) -> None:
     pygame.init()
-    pygame.display.set_caption("Space Defense")
+    pygame.display.set_caption("Space Defense - Deep RL Arena")
     screen: Surface = pygame.display.set_mode(Vector2(WINDOW_WIDTH, WINDOW_HEIGHT))
     clock: Clock = pygame.time.Clock()
     fonts: dict[str, Font] = {
