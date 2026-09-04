@@ -6,7 +6,7 @@ from .config import TILE_SIZE
 
 
 ASSET_ROOT = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parents[1]
     / "assets"
     / "Farm RPG FREE 16x16 - Tiny Asset Pack"
 )
