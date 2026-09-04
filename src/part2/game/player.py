@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, Iterable
+from enum import Enum
 import pygame
 from pygame.math import Vector2
 from pygame.sprite import AbstractGroup
@@ -10,7 +11,7 @@ from part2.config import (
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT)
-from part2.engine.core import KinematicObject, Group
+from part2.engine.core import GameObject, KinematicObject, Group
 import part2.game.enemy as enemy
 from part2.game.config import (
         PLAYER_BULLET_SPEED,
@@ -18,37 +19,97 @@ from part2.game.config import (
         PLAYER_INVULNERABLE_COOLDOWN_DURATION)
 
 
+class Action(Enum):
+    NONE = 0
+    SHOOT = 1
+
+    # Control style A.
+    THRUST_FORWARD = 2
+    ROTATE_LEFT = 3
+    ROTATE_RIGHT = 4
+
+    # Control style B.
+    MOVE_UP = 5
+    MOVE_LEFT = 6
+    MOVE_DOWN = 7
+    MOVE_RIGHT = 8
+
+
+class PlayerController(GameObject):
+    def __init__(self) -> None:
+        super().__init__()
+        self.player: Player | None = None
+
+    def attach_player(self, player: Player) -> None:
+        self.player = player
+
+
+class PlayerControllerInputStyleA(PlayerController):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
+        super().update(delta, events, *args, **kwargs)
+
+        if self.player:
+            pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
+            if pressed_keys[pygame.K_SPACE]:
+                self.player.apply_action(delta, Action.SHOOT)
+            if pressed_keys[pygame.K_UP] or pressed_keys[pygame.K_w]:
+                self.player.apply_action(delta, Action.THRUST_FORWARD)
+            if pressed_keys[pygame.K_LEFT] or pressed_keys[pygame.K_a]:
+                self.player.apply_action(delta, Action.ROTATE_LEFT)
+            if pressed_keys[pygame.K_RIGHT] or pressed_keys[pygame.K_d]:
+                self.player.apply_action(delta, Action.ROTATE_RIGHT)
+
+
+class PlayerControllerInputStyleB(PlayerController):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def update(self, delta: float, events: list[Event], *args, **kwargs) -> None:
+        super().update(delta, events, *args, **kwargs)
+
+        if self.player:
+            pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
+            if pressed_keys[pygame.K_SPACE]:
+                self.player.apply_action(delta, Action.SHOOT)
+            if pressed_keys[pygame.K_UP] or pressed_keys[pygame.K_w]:
+                self.player.apply_action(delta, Action.MOVE_UP)
+            if pressed_keys[pygame.K_LEFT] or pressed_keys[pygame.K_a]:
+                self.player.apply_action(delta, Action.MOVE_LEFT)
+            if pressed_keys[pygame.K_DOWN] or pressed_keys[pygame.K_s]:
+                self.player.apply_action(delta, Action.MOVE_DOWN)
+            if pressed_keys[pygame.K_RIGHT] or pressed_keys[pygame.K_d]:
+                self.player.apply_action(delta, Action.MOVE_RIGHT)
+
+
 class Player(KinematicObject):
-    def __init__(self, health: int, speed: float, angular_speed: float, **kwargs):
+    def __init__(self,
+            controller: PlayerController,
+            health: int,
+            speed: float,
+            angular_speed: float,
+            bullet_pool: PlayerBulletPool | None = None,
+            position: Vector2 | None = None,
+            **kwargs
+    ):
+        kwargs["position"] = position if position else Vector2(0, 0)
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player.png")
         super().__init__(**kwargs)
+        self.controller: PlayerController = controller
         self.health: int = health
         self.speed: float = speed
         self.angular_speed: float = angular_speed
+        self.bullet_pool: PlayerBulletPool | None = bullet_pool
         self.shooting_enabled: bool = True
         self.last_shot_tick: int = pygame.time.get_ticks()
         self.invulnerable: bool = False
         self.last_invulnerable_tick: int = pygame.time.get_ticks()
 
-    def update(self, delta: float, events: list[Event], bullet_pool: PlayerBulletPool) -> None:
+    def update(self, delta: float, events: list[Event]) -> None:
         self.velocity = Vector2(0, 0)
-
-        pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
-        if pressed_keys[pygame.K_UP] or pressed_keys[pygame.K_w]:
-            self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
-        if pressed_keys[pygame.K_LEFT] or pressed_keys[pygame.K_a]:
-            self.rotation += self.angular_speed * delta
-        if pressed_keys[pygame.K_RIGHT] or pressed_keys[pygame.K_d]:
-            self.rotation -= self.angular_speed * delta
-        if pressed_keys[pygame.K_SPACE] and self.shooting_enabled:
-            self.shooting_enabled = False
-            self.last_shot_tick = pygame.time.get_ticks()
-            new_bullet = PlayerBullet(
-                speed = PLAYER_BULLET_SPEED,
-                position = Vector2(self.position),
-                rotation = self.rotation,
-            )
-            bullet_pool.add(new_bullet)
+        self.controller.update(delta, events)
 
         self.move(delta)
         self._limit_screen_bound()
@@ -72,6 +133,46 @@ class Player(KinematicObject):
             else:
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_player.png")
                 self.invulnerable = False
+
+    def apply_action(self, delta: float, action: Action) -> None:
+        match action:
+            case Action.NONE:
+                return
+            case Action.SHOOT:
+                self.shoot()
+
+            # Control style A.
+            case Action.THRUST_FORWARD:
+                self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
+            case Action.ROTATE_LEFT:
+                self.rotation += self.angular_speed * delta
+            case Action.ROTATE_RIGHT:
+                self.rotation -= self.angular_speed * delta
+
+            # Control style B.
+            case Action.MOVE_UP:
+                self.rotation = 0.0
+                self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
+            case Action.MOVE_LEFT:
+                self.rotation = 90.0
+                self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
+            case Action.MOVE_DOWN:
+                self.rotation = 180.0
+                self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
+            case Action.MOVE_RIGHT:
+                self.rotation = 270.0
+                self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
+
+    def shoot(self) -> None:
+        if self.shooting_enabled and not self.bullet_pool is None:
+            self.shooting_enabled = False
+            self.last_shot_tick = pygame.time.get_ticks()
+            new_bullet = PlayerBullet(
+                speed = PLAYER_BULLET_SPEED,
+                position = Vector2(self.position),
+                rotation = self.rotation,
+            )
+            self.bullet_pool.add(new_bullet)
 
     def hurt(self) -> None:
         if self.health > 0:
