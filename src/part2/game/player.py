@@ -11,7 +11,7 @@ from part2.config import (
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT)
-from part2.engine.core import GameObject, KinematicObject, Group
+from part2.engine.core import GameObject, Timer, KinematicObject, Group
 import part2.game.enemy as enemy
 from part2.game.config import (
         PLAYER_HEALTH,
@@ -134,9 +134,9 @@ class Player(KinematicObject):
         self.angular_velocity: float = 0.0
         self.bullet_pool: PlayerBulletPool | None = bullet_pool
         self.shooting_enabled: bool = True
-        self.last_shot_tick: int = pygame.time.get_ticks()
+        self.shooting_cooldown_timer: Timer = Timer(wait_time=PLAYER_SHOOTING_COOLDOWN, one_shot=True)
         self.invulnerable: bool = False
-        self.last_invulnerable_tick: int = pygame.time.get_ticks()
+        self.invulnerable_timer: Timer = Timer(wait_time=PLAYER_INVULNERABLE_COOLDOWN_DURATION, one_shot=True)
 
     def update(self, delta: float, events: list[Event]) -> None:
         self.angular_velocity = 0.0
@@ -147,19 +147,19 @@ class Player(KinematicObject):
         self._limit_screen_bound()
         super().update(delta, events)
 
-        current_tick: int = pygame.time.get_ticks()
-
-        if (
-            not self.shooting_enabled
-            and (current_tick - self.last_shot_tick) / 1000.0 >= PLAYER_SHOOTING_COOLDOWN
-        ):
+        self.shooting_cooldown_timer.update(delta)
+        if not self.shooting_enabled and self.shooting_cooldown_timer.is_stopped():
             self.shooting_enabled = True
 
+        self.invulnerable_timer.update(delta)
         if self.invulnerable:
-            if (current_tick - self.last_invulnerable_tick) / 1000.0 < 0.1:
+            if (
+                not self.invulnerable_timer.is_stopped()
+                and self.invulnerable_timer.wait_time - self.invulnerable_timer.time_left < 0.1
+            ):
                 self.scale = Vector2(0.9, 0.9)
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_player_hurt.png")
-            elif (current_tick - self.last_invulnerable_tick) / 1000.0 <= PLAYER_INVULNERABLE_COOLDOWN_DURATION:
+            elif not self.invulnerable_timer.is_stopped():
                 self.scale = Vector2(1, 1)
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_player_invulnerable.png")
             else:
@@ -199,7 +199,7 @@ class Player(KinematicObject):
     def shoot(self) -> None:
         if self.shooting_enabled and not self.bullet_pool is None:
             self.shooting_enabled = False
-            self.last_shot_tick = pygame.time.get_ticks()
+            self.shooting_cooldown_timer.start()
             new_bullet = PlayerBullet(
                 speed = PLAYER_BULLET_SPEED,
                 position = Vector2(self.position),
@@ -211,7 +211,7 @@ class Player(KinematicObject):
         if self.health > 0:
             self.health -= 1
         self.invulnerable = True
-        self.last_invulnerable_tick = pygame.time.get_ticks()
+        self.invulnerable_timer.start()
 
     def move(self, delta: float) -> None:
         self.rotation += self.angular_velocity * delta
