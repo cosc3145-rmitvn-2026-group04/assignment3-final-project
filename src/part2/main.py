@@ -11,6 +11,8 @@ from pygame.math import Vector2
 from pygame.font import SysFont, Font
 from pygame.event import Event
 from part2.game.phase import get_phases
+from part2.game.config import PLAYER_HEALTH, PLAYER_SPEED, PLAYER_ANGULAR_SPEED
+from part2.game.player import Player, PlayerControllerInputStyleA, PlayerControllerInputStyleB
 from part2.game.game import Game, GameStatus
 from part2.game.hud import MainHUD
 from part2.config import (
@@ -44,9 +46,18 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         "xsmall": SysFont("Consolas", 12, False),
     }
 
+
     phase_index: int
     for phase_index in range(start_phase, len(phases["phases"])):
-        game: Game = Game(phases["phases"][phase_index])
+        player: Player = Player(
+                controller=PlayerControllerInputStyleA(),
+                health=PLAYER_HEALTH,
+                speed=PLAYER_SPEED,
+                angular_speed=PLAYER_ANGULAR_SPEED,
+                radius=12.0,
+                offset=Vector2(0, 4))
+        player.controller.player = player
+        game: Game = Game(player, phases["phases"][phase_index])
         main_hud: MainHUD = MainHUD(fonts, game)
 
         debug_render: bool = False
@@ -68,8 +79,14 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
                     )
                 ):
                     running = False
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F2:
                     debug_render = not debug_render
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
+                    if isinstance(player.controller, PlayerControllerInputStyleA):
+                        player.controller = PlayerControllerInputStyleB()
+                    else:
+                        player.controller = PlayerControllerInputStyleA()
+                    player.controller.player = player
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                     game.reset()
             # ==========================
