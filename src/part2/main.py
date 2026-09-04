@@ -11,10 +11,13 @@ from pygame.math import Vector2
 from pygame.font import SysFont, Font
 from pygame.event import Event
 from part2.game.phase import get_phases
-from part2.game.config import PLAYER_HEALTH, PLAYER_SPEED, PLAYER_ANGULAR_SPEED
-from part2.game.player import Player, PlayerControllerInputStyleA, PlayerControllerInputStyleB
+from part2.game.player import (
+        Player,
+        ActionStyle,
+        PlayerControllerInputStyleA,
+        PlayerControllerInputStyleB)
 from part2.game.game import Game, GameStatus
-from part2.game.hud import MainHUD
+from part2.game.hud import MainHUD, HelpHUD
 from part2.config import (
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
@@ -24,7 +27,6 @@ from part2.config import (
 # Verify models directory.
 MODELS_DIR: Path = Path(__file__).resolve().parents[2] / "models" / "part2"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
-
 
 def train(phases: dict[str, Any], output: Path | None = None) -> None:
     raise NotImplementedError  # TODO: Implement this.
@@ -51,7 +53,10 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         player: Player = Player(controller=PlayerControllerInputStyleA())
         player.controller.attach_player(player)
         game: Game = Game(player, phases["phases"][phase_index])
+
         main_hud: MainHUD = MainHUD(fonts, game)
+        show_help: bool = False
+        help_hud: HelpHUD = HelpHUD(fonts)
 
         debug_render: bool = False
         running: bool = True
@@ -72,6 +77,8 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
                     )
                 ):
                     running = False
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                    show_help = not show_help
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F2:
                     debug_render = not debug_render
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
@@ -87,6 +94,17 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
             # ====== Frame Update ======
             game.update(delta, events)
             main_hud.update(delta, events)
+            help_hud.update(
+                    delta,
+                    events,
+                    show_help,
+                    (
+                        ActionStyle.STYLE_A
+                        if isinstance(player.controller, PlayerControllerInputStyleA)
+                        else ActionStyle.STYLE_B
+                        if isinstance(player.controller, PlayerControllerInputStyleB)
+                        else None
+                    ))
             if (
                 game.game_over
                 and game.status == GameStatus.GAME_WON
@@ -98,7 +116,7 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
             # ======= Frame Draw =======
             game.render(screen, fonts, debug_render)
             main_hud.draw(screen)
-
+            help_hud.draw(screen)
             pygame.display.flip()
             # ==========================
 
