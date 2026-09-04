@@ -3,10 +3,19 @@ import numpy as np
 from gymnasium import Env, spaces
 from pygame.math import Vector2
 from part2.ai.agent import PlayerControllerAI
-from part2.ai.config import MAX_ENEMY_SPAWNER_OBS, MAX_ENEMY_OBS
+from part2.ai.config import (
+        MAX_ENEMY_SPAWNER_OBS,
+        MAX_ENEMY_OBS,
+        REWARD_STEP,
+        REWARD_AGENT_SHOOT,
+        REWARD_AGENT_HURT,
+        REWARD_ENEMY_SPAWNER_KILL,
+        REWARD_ENEMY_KILL,
+        REWARD_WIN,
+        REWARD_LOSS)
 from part2.game.player import Player, Action, ActionStyle, ACTIONS
 from part2.game.enemy import EnemySpawner, Enemy
-from part2.game.game import Game
+from part2.game.game import Game, GameStatus
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
 
@@ -60,13 +69,44 @@ class GameEnvironment(Env):
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
-        reward: float = 0.0  # TODO: Implement this.
+        reward: float = REWARD_STEP
+
+        previous_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
+        previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
+        previous_enemy_count: int = len(self.game.enemy_pool.objects())
+        previous_agent_health: int = self.game.player.health
 
         _action: Action = self._actions[action]
-        self.agent.apply_action(_action)
+        self.agent.controller.update(delta, [], _action)
         self.game.update(delta, events=[])
 
-        return self._get_observation, reward, self.game.game_over, False, self._get_info()
+        current_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
+        agent_shot_count: int = previous_agent_bullet_count - current_agent_bullet_count
+        reward += agent_shot_count * REWARD_AGENT_SHOOT
+
+        current_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
+        enemy_spawner_kill_count: int = previous_enemy_spawner_count - current_enemy_spawner_count
+        reward += enemy_spawner_kill_count * REWARD_ENEMY_SPAWNER_KILL
+
+        current_enemy_count: int = len(self.game.enemy_pool.objects())
+        enemy_kill_count: int = previous_enemy_count - current_enemy_count
+        reward += enemy_kill_count * REWARD_ENEMY_KILL
+
+        current_agent_health: int = self.game.player.health
+        agent_health_loss: int = previous_agent_health - current_agent_health
+        reward += agent_health_loss * REWARD_AGENT_HURT
+
+        terminated: bool = False
+        truncated: bool = False
+        if self.game.game_over:
+            terminated = True
+            match self.game.status:
+                case GameStatus.GAME_WON:
+                    reward += REWARD_WIN
+                case GameStatus.GAME_LOST:
+                    reward += REWARD_LOSS
+
+        return self._get_observation, reward, terminated, truncated, self._get_info()
 
     def render(self) -> str | np.ndarray[tuple[Any, ...], np.dtype[Any]] | tuple[np.ndarray[tuple[Any, ...], np.dtype[Any]], np.ndarray[tuple[Any, ...], np.dtype[Any]]] | list[str | np.ndarray[tuple[Any, ...], np.dtype[Any]] | tuple[np.ndarray[tuple[Any, ...], np.dtype[Any]], np.ndarray[tuple[Any, ...], np.dtype[Any]]]] | None:
         return super().render()  # TODO: Implement this.
