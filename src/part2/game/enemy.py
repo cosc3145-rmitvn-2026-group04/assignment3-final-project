@@ -32,12 +32,12 @@ class EnemySpawner(SpatialObject):
         kwargs["radius"] = 30.0
         super().__init__(**kwargs)
         self.health: int = health
+        self.max_health: int = health
         self.spawn_amount: int = enemy_spawn_amount  # The amount of enemies being spawned at once per spawn cycle.
         self.enemy_spawn_delay: float = enemy_spawn_delay  # The delay in seconds between spawn cycles.
         self.activation_delay: float = activation_delay  # The duration that this spawner will sleep before activating.
         self.invulnerable: bool = False
         self.last_invulnerable_tick: int = pygame.time.get_ticks()
-        self.__max_health: int = health
         self.__ready_tick: int = pygame.time.get_ticks()
         self.__last_spawn_tick: int = pygame.time.get_ticks()
         self.__first_spawn: bool = True
@@ -106,7 +106,7 @@ class EnemySpawner(SpatialObject):
             *args, **kwargs
     ) -> None:
         super().draw(screen, *args, **kwargs)
-        hp_bar_text: str = "[%d/%d HP]" % (self.health, self.__max_health)
+        hp_bar_text: str = "[%d/%d HP]" % (self.health, self.max_health)
         hp_bar_label: Surface = fonts["small"].render(
                 hp_bar_text,
                 True, COLOR_RED)
@@ -126,11 +126,11 @@ class EnemySpawnerPool(Group):
 
 
 class Enemy(KinematicObject):
-    def __init__(self, speed: int, **kwargs):
+    def __init__(self, speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy.png")
         kwargs["radius"] = 10.0
         super().__init__(**kwargs)
-        self.speed: int = speed
+        self.speed: float = speed
 
     def update(self,
             delta: float,

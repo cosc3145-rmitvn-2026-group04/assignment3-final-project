@@ -1,0 +1,2 @@
+MAX_ENEMY_SPAWNER_OBS: int = 2
+MAX_ENEMY_OBS: int = 5
