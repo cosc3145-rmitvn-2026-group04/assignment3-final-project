@@ -14,25 +14,52 @@ from part2.config import (
 from part2.engine.core import GameObject, KinematicObject, Group
 import part2.game.enemy as enemy
 from part2.game.config import (
-        PLAYER_BULLET_SPEED,
+        PLAYER_HEALTH,
+        PLAYER_INVULNERABLE_COOLDOWN_DURATION,
+        PLAYER_SPEED,
+        PLAYER_ANGULAR_SPEED,
         PLAYER_SHOOTING_COOLDOWN,
-        PLAYER_INVULNERABLE_COOLDOWN_DURATION)
+        PLAYER_BULLET_SPEED)
 
 
 class Action(Enum):
     NONE = 0
     SHOOT = 1
 
-    # Control style A.
+    # Action style A.
     THRUST_FORWARD = 2
     ROTATE_LEFT = 3
     ROTATE_RIGHT = 4
 
-    # Control style B.
+    # Action style B.
     MOVE_UP = 5
     MOVE_LEFT = 6
     MOVE_DOWN = 7
     MOVE_RIGHT = 8
+
+
+class ActionStyle(Enum):
+    STYLE_A = 0
+    STYLE_B = 1
+
+
+ACTIONS: dict[ActionStyle, dict[int, Action]] = {
+    ActionStyle.STYLE_A: {
+        0: Action.NONE,
+        1: Action.SHOOT,
+        2: Action.THRUST_FORWARD,
+        3: Action.ROTATE_LEFT,
+        4: Action.ROTATE_RIGHT,
+    },
+    ActionStyle.STYLE_B: {
+        0: Action.NONE,
+        1: Action.SHOOT,
+        2: Action.MOVE_UP,
+        3: Action.MOVE_LEFT,
+        4: Action.MOVE_DOWN,
+        5: Action.MOVE_RIGHT,
+    },
+}
 
 
 class PlayerController(GameObject):
@@ -54,13 +81,13 @@ class PlayerControllerInputStyleA(PlayerController):
         if self.player:
             pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
             if pressed_keys[pygame.K_SPACE]:
-                self.player.apply_action(delta, Action.SHOOT)
+                self.player.apply_action(Action.SHOOT)
             if pressed_keys[pygame.K_UP] or pressed_keys[pygame.K_w]:
-                self.player.apply_action(delta, Action.THRUST_FORWARD)
+                self.player.apply_action(Action.THRUST_FORWARD)
             if pressed_keys[pygame.K_LEFT] or pressed_keys[pygame.K_a]:
-                self.player.apply_action(delta, Action.ROTATE_LEFT)
+                self.player.apply_action(Action.ROTATE_LEFT)
             if pressed_keys[pygame.K_RIGHT] or pressed_keys[pygame.K_d]:
-                self.player.apply_action(delta, Action.ROTATE_RIGHT)
+                self.player.apply_action(Action.ROTATE_RIGHT)
 
 
 class PlayerControllerInputStyleB(PlayerController):
@@ -73,34 +100,38 @@ class PlayerControllerInputStyleB(PlayerController):
         if self.player:
             pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
             if pressed_keys[pygame.K_SPACE]:
-                self.player.apply_action(delta, Action.SHOOT)
+                self.player.apply_action(Action.SHOOT)
             if pressed_keys[pygame.K_UP] or pressed_keys[pygame.K_w]:
-                self.player.apply_action(delta, Action.MOVE_UP)
+                self.player.apply_action(Action.MOVE_UP)
             if pressed_keys[pygame.K_LEFT] or pressed_keys[pygame.K_a]:
-                self.player.apply_action(delta, Action.MOVE_LEFT)
+                self.player.apply_action(Action.MOVE_LEFT)
             if pressed_keys[pygame.K_DOWN] or pressed_keys[pygame.K_s]:
-                self.player.apply_action(delta, Action.MOVE_DOWN)
+                self.player.apply_action(Action.MOVE_DOWN)
             if pressed_keys[pygame.K_RIGHT] or pressed_keys[pygame.K_d]:
-                self.player.apply_action(delta, Action.MOVE_RIGHT)
+                self.player.apply_action(Action.MOVE_RIGHT)
 
 
 class Player(KinematicObject):
     def __init__(self,
             controller: PlayerController,
-            health: int,
-            speed: float,
-            angular_speed: float,
+            health: int = PLAYER_HEALTH,
+            speed: float = PLAYER_SPEED,
+            angular_speed: float = PLAYER_ANGULAR_SPEED,
             bullet_pool: PlayerBulletPool | None = None,
             position: Vector2 | None = None,
             **kwargs
     ):
         kwargs["position"] = position if position else Vector2(0, 0)
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player.png")
+        kwargs["radius"]=12.0
+        kwargs["offset"]=Vector2(0, 4)
         super().__init__(**kwargs)
         self.controller: PlayerController = controller
         self.health: int = health
+        self.max_health: int = health
         self.speed: float = speed
         self.angular_speed: float = angular_speed
+        self.angular_velocity: float = 0.0
         self.bullet_pool: PlayerBulletPool | None = bullet_pool
         self.shooting_enabled: bool = True
         self.last_shot_tick: int = pygame.time.get_ticks()
@@ -108,6 +139,7 @@ class Player(KinematicObject):
         self.last_invulnerable_tick: int = pygame.time.get_ticks()
 
     def update(self, delta: float, events: list[Event]) -> None:
+        self.angular_velocity = 0.0
         self.velocity = Vector2(0, 0)
         self.controller.update(delta, events)
 
@@ -134,22 +166,23 @@ class Player(KinematicObject):
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_player.png")
                 self.invulnerable = False
 
-    def apply_action(self, delta: float, action: Action) -> None:
+    def apply_action(self, action: Action) -> None:
+        self.angular_velocity = 0.0
         match action:
             case Action.NONE:
                 return
             case Action.SHOOT:
                 self.shoot()
 
-            # Control style A.
+            # Action style A.
             case Action.THRUST_FORWARD:
                 self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
             case Action.ROTATE_LEFT:
-                self.rotation += self.angular_speed * delta
+                self.angular_velocity = self.angular_speed
             case Action.ROTATE_RIGHT:
-                self.rotation -= self.angular_speed * delta
+                self.angular_velocity = -self.angular_speed
 
-            # Control style B.
+            # Action style B.
             case Action.MOVE_UP:
                 self.rotation = 0.0
                 self.velocity = Vector2(0, -1).rotate(-self.rotation) * self.speed
@@ -179,6 +212,10 @@ class Player(KinematicObject):
             self.health -= 1
         self.invulnerable = True
         self.last_invulnerable_tick = pygame.time.get_ticks()
+
+    def move(self, delta: float) -> None:
+        self.rotation += self.angular_velocity * delta
+        return super().move(delta)
 
     def _limit_screen_bound(self) -> None:
         x: float

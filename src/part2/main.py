@@ -49,14 +49,8 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
 
     phase_index: int
     for phase_index in range(start_phase, len(phases["phases"])):
-        player: Player = Player(
-                controller=PlayerControllerInputStyleA(),
-                health=PLAYER_HEALTH,
-                speed=PLAYER_SPEED,
-                angular_speed=PLAYER_ANGULAR_SPEED,
-                radius=12.0,
-                offset=Vector2(0, 4))
-        player.controller.player = player
+        player: Player = Player(controller=PlayerControllerInputStyleA())
+        player.controller.attach_player(player)
         game: Game = Game(player, phases["phases"][phase_index])
         main_hud: MainHUD = MainHUD(fonts, game)
 

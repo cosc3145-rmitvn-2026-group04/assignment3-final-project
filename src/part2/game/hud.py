@@ -4,7 +4,7 @@ from pygame.math import Vector2
 from pygame.event import Event
 from pygame.font import Font
 from part2.engine.core import UserInterface
-from part2.game.config import PLAYER_HEALTH, PLAYER_INVULNERABLE_COOLDOWN_DURATION
+from part2.game.config import PLAYER_INVULNERABLE_COOLDOWN_DURATION
 from part2.game.game import Game, GameStatus
 from part2.config import (
         WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -25,8 +25,9 @@ class MainHUD(UserInterface):
         self.surface.fill(COLOR_MAIN_HUD_BACKGROUND)
 
         player_hp: int = self.game.player.health
+        player_max_hp: int = self.game.player.max_health
         player_hp_bar_fill_text: str = "•" * player_hp
-        player_hp_bar_null_text: str = " " * (PLAYER_HEALTH - player_hp)
+        player_hp_bar_null_text: str = " " * (player_max_hp - player_hp)
         player_hp_text: str = "HP [%s%s] %d %s" % (
             player_hp_bar_fill_text,
             player_hp_bar_null_text,
