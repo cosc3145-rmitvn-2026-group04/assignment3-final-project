@@ -1,7 +1,9 @@
 from typing import Any, SupportsFloat
 import numpy as np
 from gymnasium import Env, spaces
+from pygame import Surface
 from pygame.math import Vector2
+from pygame.font import Font
 from part2.ai.agent import PlayerControllerAI
 from part2.ai.config import (
         MAX_ENEMY_SPAWNER_OBS,
@@ -27,6 +29,7 @@ class GameEnvironment(Env):
             raise ValueError("`TrainingEnvironment` accepts only `PlayerControllerAI` for `player.controller`.")
 
         super().__init__()
+        self.render_mode = "rbg_array"
         self.agent: Player = agent
         self.game: Game = Game(agent, phase_data)
 
@@ -108,8 +111,8 @@ class GameEnvironment(Env):
 
         return self._get_observation, reward, terminated, truncated, self._get_info()
 
-    def render(self) -> str | np.ndarray[tuple[Any, ...], np.dtype[Any]] | tuple[np.ndarray[tuple[Any, ...], np.dtype[Any]], np.ndarray[tuple[Any, ...], np.dtype[Any]]] | list[str | np.ndarray[tuple[Any, ...], np.dtype[Any]] | tuple[np.ndarray[tuple[Any, ...], np.dtype[Any]], np.ndarray[tuple[Any, ...], np.dtype[Any]]]] | None:
-        return super().render()  # TODO: Implement this.
+    def render_custom(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
+        self.game.render(screen, fonts, debug)
 
     def _get_observation(self) -> dict[str, np.ndarray]:
         """Returns the observation calculated from the current game state."""

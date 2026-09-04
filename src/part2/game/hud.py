@@ -1,4 +1,3 @@
-import pygame
 from pygame import Rect, Surface
 from pygame.math import Vector2
 from pygame.event import Event
