@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pygame
 
-from .config import (
+from part1.game.config import (
     ALPHA,
     EPISODES,
     EPSILON_END,
@@ -12,9 +12,9 @@ from .config import (
     GAMMA,
     MAX_STEPS,
 )
-from .gridworld import GridWorld
-from .levels import LEVEL_0
-from .q_learning import QLearningAgent, linear_epsilon
+from part1.game.gridworld import GridWorld
+from part1.game.levels import LEVEL_0
+from part1.ai.q_learning import QLearningAgent, linear_epsilon
 
 
 MODEL_PATH = (
