@@ -46,7 +46,6 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         "xsmall": SysFont("Consolas", 12, False),
     }
 
-
     phase_index: int
     for phase_index in range(start_phase, len(phases["phases"])):
         player: Player = Player(controller=PlayerControllerInputStyleA())
