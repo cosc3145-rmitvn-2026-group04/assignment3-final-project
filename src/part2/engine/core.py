@@ -32,6 +32,39 @@ class GameObject:
         pass
 
 
+class Timer(GameObject):
+    def __init__(self, wait_time: float = 1.0, one_shot: bool = False, autostart: bool = False) -> None:
+        """Lean implementation of Godot's Timer."""
+        super().__init__()
+        self.wait_time: float = wait_time
+        self.one_shot: bool = one_shot
+        self.time_left: float = wait_time if autostart else 0.0
+        self.__stopped: bool = False
+
+    def update(self, delta: float, *args, **kwargs) -> None:
+        super().update(delta, [], *args, **kwargs)
+        if not self.is_stopped():
+            self.time_left -= delta
+            if self.time_left < 0.0:
+                if self.one_shot:
+                    self.stop()
+                else:
+                    self.start(self.wait_time)
+
+    def is_stopped(self) -> bool:
+        return self.__stopped
+
+    def start(self, wait_time: float = -1.0) -> None:
+        if wait_time > 0.0:
+            self.wait_time = wait_time
+        self.time_left = self.wait_time
+        self.__stopped = False
+
+    def stop(self) -> None:
+        self.time_left = 0.0
+        self.__stopped = True
+
+
 class UserInterface(GameObject):
     def __init__(self,
             rect: Rect,

@@ -33,10 +33,7 @@ class MainHUD(UserInterface):
             player_hp_bar_null_text,
             player_hp,
             (
-                "(INVULN %.1f)" % (
-                    PLAYER_INVULNERABLE_COOLDOWN_DURATION
-                    - (pygame.time.get_ticks() - self.game.player.last_invulnerable_tick) / 1000.0
-                )
+                "(INVULN %.1f)" % (self.game.player.invulnerable_timer.time_left)
                 if not self.game.game_over and self.game.player.invulnerable
                 else ""
             )
