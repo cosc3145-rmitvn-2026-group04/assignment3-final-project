@@ -26,19 +26,32 @@ def run_training(env, agent, episodes, start_eps, end_eps, save_path):
             next_state, reward, done, _ = env.step(action)
             
             if is_sarsa:
-                next_action = agent.choose_action(next_state, epsilon)
+                next_action = (
+                    agent.choose_action(next_state, epsilon)
+                    if not done
+                    else None
+                )
                 agent.update(
-                                state, 
-                                action, 
-                                reward, 
-                                next_state, 
-                                next_action, 
-                                done
-                            )
-                action = next_action
+                    state,
+                    action,
+                    reward,
+                    next_state,
+                    next_action,
+                    done,
+                )
             else:
-                # TODO: update q learning
-                pass
+                agent.update(
+                    state,
+                    action,
+                    reward,
+                    next_state,
+                    done,
+                )
+                next_action = (
+                    agent.choose_action(next_state, epsilon)
+                    if not done
+                    else None
+                )
             
             state = next_state
             total_reward += reward
@@ -47,6 +60,10 @@ def run_training(env, agent, episodes, start_eps, end_eps, save_path):
             if done:
                 successful_episodes += 1
                 break
+
+            # SARSA follows the exact action used in its update. 
+            # Q-learning chooses the next behaviour-policy action.
+            action = next_action
             
         if episode % 100 == 0 or episode == episodes - 1:
             success_rate = successful_episodes / (episode + 1)
