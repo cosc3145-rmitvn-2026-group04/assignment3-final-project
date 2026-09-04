@@ -1,4 +1,4 @@
-from part1.ai.RLAgent import RLAgent
+from .RLAgent import RLAgent
 
 class SARSAAgent(RLAgent):
     def update(self, state, action, reward, next_state, next_action, done):

@@ -1,9 +1,9 @@
+import pygame
+
 import argparse
 from pathlib import Path
 
-import pygame
-
-from part1.game.config import (
+from src.part1.game.config import (
     ALPHA,
     EPISODES,
     EPSILON_END,
@@ -12,17 +12,16 @@ from part1.game.config import (
     GAMMA,
     MAX_STEPS,
 )
-from part1.game.gridworld import GridWorld
-from part1.game.levels import LEVEL_0
-from part1.ai.q_learning import QLearningAgent, linear_epsilon
+from src.part1.game.gridworld import GridWorld
+from src.part1.game.levels import LEVEL_0, LEVEL_1
+from src.part1.ai.q_learning import QLearningAgent
+from src.part1.ai.SARSA import SARSAAgent
+from src.part1.runner import run_interactive, run_training
 
-
-MODEL_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "models"
-    / "part1"
-    / "level0_q.pkl"
-)
+LEVEL_CONFIG = {
+    0: {"layout": LEVEL_0, "agent_cls": QLearningAgent, "algo_name": "q_learning"},
+    1: {"layout": LEVEL_1, "agent_cls": SARSAAgent, "algo_name": "sarsa"},
+}
 
 KEY_TO_ACTION = {
     pygame.K_UP: 0,
@@ -30,193 +29,59 @@ KEY_TO_ACTION = {
     pygame.K_LEFT: 2,
     pygame.K_RIGHT: 3,
 }
-
-
-def train():
-    """Train Level 0 without rendering and save the learned Q-table."""
-    environment = GridWorld(LEVEL_0)
-    agent = QLearningAgent(ALPHA, GAMMA)
-    successful_episodes = 0
-
-    for episode in range(EPISODES):
-        state = environment.reset()
-        epsilon = linear_epsilon(
-            episode,
-            EPISODES,
-            EPSILON_START,
-            EPSILON_END,
-        )
-        total_reward = 0
-        done = False
-        steps_taken = 0
-
-        for step in range(MAX_STEPS):
-            action = agent.choose_action(state, epsilon)
-            next_state, reward, done, _ = environment.step(action)
-
-            agent.update(
-                state,
-                action,
-                reward,
-                next_state,
-                done,
-            )
-
-            state = next_state
-            total_reward += reward
-            steps_taken = step + 1
-
-            if done:
-                successful_episodes += 1
-                break
-
-        if episode % 100 == 0 or episode == EPISODES - 1:
-            success_rate = successful_episodes / (episode + 1)
-            print(
-                f"Episode {episode + 1}/{EPISODES} | "
-                f"reward={total_reward} | "
-                f"steps={steps_taken} | "
-                f"epsilon={epsilon:.3f} | "
-                f"success={success_rate:.1%}"
-            )
-
-    agent.save(MODEL_PATH)
-    print(f"Saved trained Q-table to: {MODEL_PATH}")
-
-
-def evaluate():
-    """Open Pygame and animate the policy stored in the trained Q-table."""
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            "No trained model was found. Run "
-            "'python -m src.part1.main train' first."
-        )
-
-    environment = GridWorld(LEVEL_0)
-    agent = QLearningAgent(ALPHA, GAMMA)
-    agent.load(MODEL_PATH)
-
-    state = environment.reset()
-    total_reward = 0
-    steps_taken = 0
-    done = False
-    running = True
-
-    environment.render(
-        "Evaluating learned policy\nR: replay | Esc: quit"
-    )
-    clock = pygame.time.Clock()
-
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-                elif event.key == pygame.K_r:
-                    state = environment.reset()
-                    total_reward = 0
-                    steps_taken = 0
-                    done = False
-
-        if not done:
-            action = agent.choose_action(state, epsilon=0.0)
-            state, reward, done, _ = environment.step(action)
-            total_reward += reward
-            steps_taken += 1
-
-        if done:
-            message = (
-                f"Complete | Reward: {total_reward} | Steps: {steps_taken}\n"
-                "R: replay | Esc: quit"
-            )
-        else:
-            message = (
-                f"Evaluating | Reward: {total_reward} | Steps: {steps_taken}\n"
-                "R: replay | Esc: quit"
-            )
-
-        environment.render(message)
-        clock.tick(FPS)
-
-    environment.close()
-
-
-def manual():
-    """Open Pygame and let a person test Level 0 with the arrow keys."""
-    environment = GridWorld(LEVEL_0)
-    environment.reset()
-
-    total_reward = 0
-    steps_taken = 0
-    done = False
-    running = True
-
-    environment.render(
-        "Manual mode\nArrow keys: move | R: reset | Esc: quit"
-    )
-    clock = pygame.time.Clock()
-
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-                elif event.key == pygame.K_r:
-                    environment.reset()
-                    total_reward = 0
-                    steps_taken = 0
-                    done = False
-                elif event.key in KEY_TO_ACTION and not done:
-                    action = KEY_TO_ACTION[event.key]
-                    _, reward, done, _ = environment.step(action)
-                    total_reward += reward
-                    steps_taken += 1
-
-        if done:
-            message = (
-                f"Complete | Reward: {total_reward} | Steps: {steps_taken}\n"
-                "R: reset | Esc: quit"
-            )
-        else:
-            message = (
-                f"Manual | Reward: {total_reward} | Steps: {steps_taken}\n"
-                "Arrow keys: move | R: reset | Esc: quit"
-            )
-
-        environment.render(message)
-        clock.tick(60)
-
-    environment.close()
-
+def get_model_path(level_id: int, algo_name: str) -> Path:
+    """generates path: models/part1/level{id}_{algo}.pkl"""
+    base_dir = Path(__file__).resolve().parents[2] / "models" / "part1"
+    return base_dir / f"level{level_id}_{algo_name}.pkl"
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Train or play the Part I Level 0 gridworld."
+        description="Train or play the Part I gridworld."
     )
     parser.add_argument(
         "mode",
         choices=("train", "evaluate", "manual"),
         help=(
-            "train without graphics, evaluate the learned policy, "
-            "or control the player manually"
+            "execution mode"
         ),
+    )
+    parser.add_argument(
+        "--level",
+        type=int,
+        default=0,
+        choices=list(LEVEL_CONFIG.keys()),
+        help="select 0 for q learning, 1 for SARSA",
     )
     return parser.parse_args()
 
 
 def main():
     arguments = parse_arguments()
+    config = LEVEL_CONFIG[arguments.level]
 
+    env = GridWorld(config["layout"])
+    model_path = get_model_path(arguments.level, config["algo_name"])
+    
     if arguments.mode == "train":
-        train()
+        agent = QLearningAgent(ALPHA, GAMMA)
+        run_training(
+            env = env,
+            agent = agent,
+            episodes = EPISODES,
+            start_eps = EPSILON_START,
+            end_eps = EPSILON_END,
+            save_path = model_path,
+        )
+
     elif arguments.mode == "evaluate":
-        evaluate()
-    else:
-        manual()
+        if not model_path.exists():
+            raise FileNotFoundError(f"No trained model at {model_path}")
+        agent = config["agent_cls"](ALPHA, GAMMA)
+        agent.load(model_path)
+        run_interactive(env = env, agent = agent)
+
+    elif arguments.mode == "manual":
+        run_interactive(env=env, key_map = KEY_TO_ACTION)
 
 
 if __name__ == "__main__":
