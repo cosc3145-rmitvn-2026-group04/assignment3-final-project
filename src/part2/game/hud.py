@@ -48,7 +48,7 @@ class MainHUD(UserInterface):
         self.surface.blit(player_hp_label, Vector2(20, 20))
 
         phase_name: str = self.game.phase_data["phase_name"]
-        if self.game.status == GameStatus.GAME_ONGOING:
+        if self.game.status == GameStatus.GAME_IN_PROGRESS:
             phase_label: Surface = self.fonts["h2"].render(
                 "PHASE %s" % phase_name,
                 True, COLOR_MAIN_HUD_FOREGROUND)
