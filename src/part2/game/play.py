@@ -1,4 +1,5 @@
 from typing import Any
+from rich import print as rprint
 import pygame
 from pygame import Surface
 from pygame.time import Clock
@@ -20,7 +21,7 @@ from part2.config import (
 
 
 def play(phases: dict[str, Any], start_phase: int = 0) -> None:
-    print("[ MODE: PLAY ]")
+    rprint("[bold yellow][ MODE: PLAY ][/bold yellow]")
 
     pygame.init()
     pygame.display.set_caption("Space Defense - Deep RL Arena")
@@ -111,4 +112,4 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
             break
 
     pygame.quit()
-    print("[ DONE ]")
+    rprint("[bold yellow][ DONE ][/bold yellow]")
