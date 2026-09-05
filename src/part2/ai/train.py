@@ -3,6 +3,7 @@ from typing import Any
 from enum import Enum
 import psutil
 import json
+from rich import print as rprint
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
@@ -50,14 +51,14 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
                     if self.verbose > 0:
-                        print("-> Win rate %.2f (last %i eps) achieved for Phase index %i. Progressed to Phase index %i" % (
+                        rprint("[blue]-> Win rate %.2f (last %i eps) achieved for Phase index %i. Progressed to Phase index %i.[/blue]" % (
                             self.win_rate_threshold,
                             self.n_episodes,
                             current_phase_index,
                             next_phase_index,
                         ))
                 elif self.verbose > 0:
-                    print("-> Win rate %.2f achieved for all %i phases." % (self.win_rate_threshold, phases_count))
+                    rprint("[blue]-> Win rate %.2f achieved for all %i phases.[/blue]" % (self.win_rate_threshold, phases_count))
 
         return super()._on_step()
 
@@ -71,7 +72,7 @@ def train(
         output_model: Path | None = None,
         verbose: int = 0
 ) -> None:
-    print("[ MODE: TRAIN ]")
+    rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
 
     available_cpu_count: int = len(psutil.Process().cpu_affinity())
     if not 0 < n_env <= available_cpu_count:
@@ -91,7 +92,7 @@ def train(
 
     # === Environment Config ===
     # Include support for multi-process parallel training.
-    vec_env: DummyVecEnv = DummyVecEnv([
+    vec_env: SubprocVecEnv = SubprocVecEnv([
         make_environment_fn(action_style, phases, seed + env_index)
         for env_index in range(n_env)
     ])
@@ -101,7 +102,7 @@ def train(
             verbose=verbose
     )
     if verbose > 0:
-        print("-> Environment loaded.")
+        rprint("[blue]-> Environment loaded.[/blue]")
     # ==========================
 
     # ====== Model Config ======
@@ -109,7 +110,7 @@ def train(
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
         model_hyperparams = json.load(file)
     if verbose > 0:
-        print("-> Loaded model hyperparams for %s from '%s'." % (
+        rprint("[blue]-> Loaded model hyperparams for %s from '%s'.[/blue]" % (
             algorithm.name,
             str(MODEL_HYPERPARAMS_CONFIG_FILE)
         ))
@@ -139,26 +140,26 @@ def train(
     with open(TRAIN_HYPERPARAMS_CONFIG_FILE, "r") as file:
         train_hyperparams = json.load(file)
     if verbose > 0:
-        print("-> Loaded training hyperparams from '%s'." % (
+        rprint("[blue]-> Loaded training hyperparams from '%s'.[/blue]" % (
             str(TRAIN_HYPERPARAMS_CONFIG_FILE)
         ))
     if verbose > 1:
         print(json.dumps(train_hyperparams, indent=2))
 
     if verbose > 0:
-        print("-> Training started.")
+        rprint("[green]-> Training started.[/green]")
     model.learn(
             **train_hyperparams,
             callback=[env_phase_callback],
             progress_bar=(verbose > 1))
     if verbose > 0:
-        print("-> Training finished.")
+        rprint("[green]-> Training finished.[/green]")
     # ==========================
 
     # ====== Model Export ======
     model.save(_output_model)
     if verbose > 0:
-        print("-> Saved model to '%s'" % (str(_output_model)))
+        rprint("[magenta]-> Saved model to '%s'.[/magenta]" % (str(_output_model)))
     # ==========================
 
-    print("[ DONE ]")
+    rprint("[bold yellow][ DONE ][/bold yellow]")
