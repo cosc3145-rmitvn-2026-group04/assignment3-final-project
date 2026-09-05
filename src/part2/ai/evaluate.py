@@ -10,6 +10,7 @@ from pygame.math import Vector2
 from pygame.font import SysFont, Font
 from pygame.event import Event
 from part2.ai.gym.environment import GameEnvironment
+from part2.ai.hud import EvaluationAuxiliaryHUD
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.game.hud import MainHUD
@@ -37,7 +38,9 @@ def evaluate(
     info: dict[str, Any]
     observation, info = env.reset()
 
-    model: PPO = PPO.load(input_model)
+
+    model: PPO = PPO.load(input_model)  # TODO: Implement auto detect PPO/DQN on model load.
+    action_type: ActionStyle = ActionStyle.STYLE_A  # TODO: Implement auto detect on model load.
     action: Any
     states: Any
 
@@ -51,14 +54,16 @@ def evaluate(
         "h3": SysFont("Consolas", 18, False),
         "body": SysFont("Consolas", 18, False),
         "small": SysFont("Consolas", 14, False),
-        "xsmall": SysFont("Consolas", 12, False),
+        "xsmall": SysFont("Consolas", 11, False),
     }
 
     phase_index: int
+    hud_show_help: bool = False
     for phase_index in range(start_phase, len(phases["phases"])):
         env.set_phase(phase_index)
+
         main_hud: MainHUD = MainHUD(fonts, env.game)
-        show_help: bool = False  # TODO: Implement Evaluation mode help UI.
+        eval_aux_hud: EvaluationAuxiliaryHUD = EvaluationAuxiliaryHUD(fonts)
 
         debug_render: bool = False
         running: bool = True
@@ -80,7 +85,7 @@ def evaluate(
                 ):
                     running = False
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
-                    show_help = not show_help
+                    hud_show_help = not hud_show_help
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F2:
                     debug_render = not debug_render
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
@@ -96,6 +101,8 @@ def evaluate(
             total_reward += float(reward)
 
             main_hud.update(delta, events)
+            eval_aux_hud.update(delta, events, hud_show_help, action_type, total_reward)
+
             if (
                 terminated or truncated
                 and info["game_status"] == GameStatus.GAME_WON
@@ -108,6 +115,7 @@ def evaluate(
             # ======= Frame Draw =======
             env.game.render(screen, fonts, debug_render)
             main_hud.draw(screen)
+            eval_aux_hud.draw(screen)
             pygame.display.flip()
             # ==========================
 

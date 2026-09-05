@@ -33,10 +33,11 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         "h3": SysFont("Consolas", 18, False),
         "body": SysFont("Consolas", 18, False),
         "small": SysFont("Consolas", 14, False),
-        "xsmall": SysFont("Consolas", 12, False),
+        "xsmall": SysFont("Consolas", 11, False),
     }
 
     phase_index: int
+    hud_show_help: bool = False
     for phase_index in range(start_phase, len(phases["phases"])):
         player: Player = Player(controller=PlayerControllerInputStyleA())
         player.controller.attach_player(player)
@@ -44,7 +45,6 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
 
         main_hud: MainHUD = MainHUD(fonts, game)
         help_hud: HelpHUD = HelpHUD(fonts)
-        show_help: bool = False
 
         debug_render: bool = False
         running: bool = True
@@ -66,7 +66,7 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
                 ):
                     running = False
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
-                    show_help = not show_help
+                    hud_show_help = not hud_show_help
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F2:
                     debug_render = not debug_render
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
@@ -85,7 +85,7 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
             help_hud.update(
                     delta,
                     events,
-                    show_help,
+                    hud_show_help,
                     (
                         ActionStyle.STYLE_A
                         if isinstance(player.controller, PlayerControllerInputStyleA)
