@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, SupportsFloat
 import numpy as np
 from gymnasium import Env, spaces
@@ -21,10 +22,25 @@ from part2.game.game import Game, GameStatus
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
 
+def make_environment(
+        agent: Player,
+        action_style: ActionStyle,
+        phase_data: dict[str, Any],
+        seed: int | None = None
+) -> GameEnvironment:
+    environment: GameEnvironment = GameEnvironment(agent, action_style, phase_data)
+    environment.reset(seed=seed)
+    return environment
+
+
 class GameEnvironment(Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": FPS}
 
-    def __init__(self, agent: Player, action_style: ActionStyle, phase_data: dict[str, Any]) -> None:
+    def __init__(self,
+            agent: Player,
+            action_style: ActionStyle,
+            phase_data: dict[str, Any]
+    ) -> None:
         if not isinstance(agent.controller, PlayerControllerAI):
             raise ValueError("`TrainingEnvironment` accepts only `PlayerControllerAI` for `player.controller`.")
 
