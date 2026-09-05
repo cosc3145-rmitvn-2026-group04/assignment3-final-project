@@ -46,7 +46,7 @@ def main() -> None:
             "-n", "--n-threads",
             type=int,
             default=1,
-            help="If `mode` is set to 'train', sets the number of parallel training processes (limited by the number of available CPU cores). Has no effect if `device` is not 'cpu'. Default: 1."
+            help="If `mode` is set to 'train' and `device` is a CPU type, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1."
     )
     arg_parser.add_argument(
             "-d", "--device",

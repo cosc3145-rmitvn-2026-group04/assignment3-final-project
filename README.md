@@ -89,9 +89,6 @@ python ./src/part2/main.py
 #### Arguments:
 
 ```txt
-usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_THREADS]
-               [-d {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,maia,xla,lazy,vulkan,mps,meta,hpu,mtia,privateuseone}] [-M MODEL_PATH] [-p START_PHASE] [-v VERBOSE]
-
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
 options:
@@ -104,8 +101,7 @@ options:
                         Sets the reinforcement learning algorithm for 'train' mode. Default: 'PPO'.
   -s SEED, --seed SEED  If `mode` is set to 'train', sets RNG seed for the training environment. Default: 0.
   -n N_THREADS, --n-threads N_THREADS
-                        If `mode` is set to 'train', sets the number of parallel training processes (limited by the number of available CPU cores). Has no effect if `device` is not 'cpu'.
-                        Default: 1.
+                        If `mode` is set to 'train' and `device` is a CPU type, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1.
   -d {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,maia,xla,lazy,vulkan,mps,meta,hpu,mtia,privateuseone}, --device {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,ma}
                         If `mode` is set to 'train', sets the device used by the training algorithm. Default: 'auto'.
   -M MODEL_PATH, --model-path MODEL_PATH
