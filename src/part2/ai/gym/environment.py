@@ -5,8 +5,8 @@ from gymnasium import Env, spaces
 from pygame import Surface
 from pygame.math import Vector2
 from pygame.font import Font
-from part2.ai.agent import PlayerControllerAI
-from part2.ai.config import (
+from part2.ai.gym.agent import PlayerControllerAI
+from part2.ai.gym.config import (
         MAX_ENEMY_SPAWNER_OBS,
         MAX_ENEMY_OBS,
         REWARD_STEP,
@@ -23,12 +23,11 @@ from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
 
 def make_environment(
-        agent: Player,
         action_style: ActionStyle,
-        phase_data: dict[str, Any],
+        phases: dict[str, Any],
         seed: int | None = None
 ) -> GameEnvironment:
-    environment: GameEnvironment = GameEnvironment(agent, action_style, phase_data)
+    environment: GameEnvironment = GameEnvironment(action_style, phases)
     environment.reset(seed=seed)
     return environment
 
@@ -37,17 +36,15 @@ class GameEnvironment(Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": FPS}
 
     def __init__(self,
-            agent: Player,
             action_style: ActionStyle,
-            phase_data: dict[str, Any]
+            phases: dict[str, Any]
     ) -> None:
-        if not isinstance(agent.controller, PlayerControllerAI):
-            raise ValueError("`TrainingEnvironment` accepts only `PlayerControllerAI` for `player.controller`.")
-
         super().__init__()
         self.render_mode = "rbg_array"
-        self.agent: Player = agent
-        self.game: Game = Game(agent, phase_data)
+        self.agent: Player = Player(PlayerControllerAI())
+        self.agent.controller.attach_player(self.agent)
+        self.phases: dict[str, Any] = phases
+        self.set_phase(0)
 
         # Agent observation (normalized): [x, y, vel_x, vel_y, rotation, health, can_shoot, is_invulnerable].
         #
@@ -76,6 +73,12 @@ class GameEnvironment(Env):
 
         self.action_space = spaces.Discrete(len(ACTIONS[action_style]))
         self._actions: dict[int, Action] = ACTIONS[action_style]
+
+    def set_phase(self, phase_index: int) -> None:
+        if not 0 <= phase_index < len(self.phases["phases"]):
+            raise ValueError("`phase_index` out of bound.")
+        self.current_phase_index = phase_index
+        self.game = Game(self.agent, self.phases["phases"][self.current_phase_index])
 
     def reset(self,
             *,
@@ -187,9 +190,10 @@ class GameEnvironment(Env):
         return np.ndarray(agent_observation + enemy_observation, dtype=np.float32)
 
     def _get_info(self) -> dict[str, Any]:
-        """Returns auxiliary information calculated from the current game state."""
+        """Returns auxiliary information of the current game state."""
         return {
             "phase": self.game.phase_data["phase_name"],
             "enemy_spawner_count": len(self.game.enemy_spawner_pool.objects()),
             "enemy_count": len(self.game.enemy_pool.objects()),
+            "game_status": self.game.status,
         }
