@@ -5,10 +5,9 @@ import pygame
 from .config import TILE_SIZE
 
 
-ASSET_ROOT = (
-    Path(__file__).resolve().parents[1]
-    / "assets"
-    / "Farm RPG FREE 16x16 - Tiny Asset Pack"
+PART1_ASSET_ROOT = Path(__file__).resolve().parents[1] / "assets"
+FARM_ASSET_ROOT = (
+    PART1_ASSET_ROOT / "Farm RPG FREE 16x16 - Tiny Asset Pack"
 )
 
 
@@ -49,19 +48,21 @@ class AssetManager:
         )
 
         self.chest_closed = self._frame(
-            "Objects/chest.png",
-            column=0,
+            "RPG Chests.png",
+            column=5,
             row=0,
-            frame_size=16,
-            output_size=TILE_SIZE // 2,
+            frame_size=32,
+            output_size=TILE_SIZE,
+            asset_root=PART1_ASSET_ROOT,
         )
 
         self.chest_open = self._frame(
-            "Objects/chest.png",
-            column=0,
-            row=1,
-            frame_size=16,
-            output_size=TILE_SIZE // 2,
+            "RPG Chests.png",
+            column=5,
+            row=3,
+            frame_size=32,
+            output_size=TILE_SIZE ,
+            asset_root=PART1_ASSET_ROOT,
         )
 
         self.monster = self._frame(
@@ -71,18 +72,20 @@ class AssetManager:
             frame_size=16,
             output_size=TILE_SIZE // 2,
         )
+        self.key = self._create_key()
 
-    def _load_sheet(self, relative_path):
-        if relative_path not in self._sheets:
-            path = ASSET_ROOT / relative_path
+    def _load_sheet(self, relative_path, asset_root=FARM_ASSET_ROOT):
+        cache_key = (asset_root, relative_path)
+        if cache_key not in self._sheets:
+            path = asset_root / relative_path
             if not path.exists():
                 raise FileNotFoundError(f"Missing Pygame asset: {path}")
 
-            self._sheets[relative_path] = pygame.image.load(
+            self._sheets[cache_key] = pygame.image.load(
                 str(path)
             ).convert_alpha()
 
-        return self._sheets[relative_path]
+        return self._sheets[cache_key]
 
     def _frame(
         self,
@@ -91,8 +94,9 @@ class AssetManager:
         row,
         frame_size,
         output_size,
+        asset_root=FARM_ASSET_ROOT,
     ):
-        sheet = self._load_sheet(relative_path)
+        sheet = self._load_sheet(relative_path, asset_root)
 
         source_rectangle = pygame.Rect(
             column * frame_size,
@@ -124,3 +128,21 @@ class AssetManager:
             )
             for column in range(frame_count)
         ]
+
+    def _create_key(self):
+        """Create a key icon with Pygame shapes when no sprite is available."""
+        size = TILE_SIZE // 2
+        key = pygame.Surface((size, size), pygame.SRCALPHA)
+        outline = (116, 76, 18)
+        gold = (255, 205, 55)
+
+        pygame.draw.circle(key, outline, (9, 9), 8, 5)
+        pygame.draw.circle(key, gold, (9, 9), 7, 3)
+        pygame.draw.line(key, outline, (14, 14), (27, 27), 7)
+        pygame.draw.line(key, gold, (14, 14), (27, 27), 3)
+        pygame.draw.line(key, outline, (22, 22), (27, 17), 5)
+        pygame.draw.line(key, gold, (22, 22), (27, 17), 2)
+        pygame.draw.line(key, outline, (26, 26), (30, 22), 5)
+        pygame.draw.line(key, gold, (26, 26), (30, 22), 2)
+
+        return key
