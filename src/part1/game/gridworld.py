@@ -19,6 +19,7 @@ class GridWorld:
         self.cols = len(layout[0])
 
         self.rocks = set()
+        self.fires = set()
         self.initial_apples = set()
         self.start_position = None
         self.key_pos = None
@@ -32,6 +33,8 @@ class GridWorld:
             for col, tile in enumerate(line):
                 if tile == "#":
                     self.rocks.add((row, col))
+                elif tile == "F":
+                    self.fires.add((row, col))
                 elif tile == "A":
                     self.initial_apples.add((row, col))
                 elif tile == "S":
@@ -55,6 +58,7 @@ class GridWorld:
         self.monsters = set(self.initial_monsters)
         self.has_key = False
         self.chest_open = False
+        self.is_dead = False
         return self.get_state()
 
     def get_state(self):
@@ -75,6 +79,13 @@ class GridWorld:
     # TODO: add monsters
         
     def step(self, action):
+        if self.is_dead:
+            return self.get_state(), 0, True, {
+                "success": False,
+                "died": True,
+                "termination_reason": "fire",
+            }
+
         row, col = self.player_position
         row_change, col_change = ACTION_DELTAS[action]
         destination = (row + row_change, col + col_change)
@@ -94,29 +105,43 @@ class GridWorld:
             self.player_position = destination
 
         reward = 0
-        # pickup apple
-        if self.player_position in self.apples:
-            self.apples.remove(self.player_position)
-            reward = 1
-        
-        # pickup key
-        if self.key_pos and self.player_position == self.key_pos and not self.has_key:
-            self.has_key = True
-            reward += 0.0
+        self.is_dead = self.player_position in self.fires
 
-        # pickup chest
-        if (
-            self.chest_pos
-            and self.player_position == self.chest_pos
-            and self.has_key
-            and not self.chest_open
-        ):
-            self.chest_open = True
-            reward += 2.0
+        if not self.is_dead:
+            # Pick up an apple.
+            if self.player_position in self.apples:
+                self.apples.remove(self.player_position)
+                reward = 1
 
-        done = self.all_rewards_collected()
+            # Pick up the key without changing the reward.
+            if (
+                self.key_pos
+                and self.player_position == self.key_pos
+                and not self.has_key
+            ):
+                self.has_key = True
 
-        return self.get_state(), reward, done, {}
+            # Open the chest only after collecting the key.
+            if (
+                self.chest_pos
+                and self.player_position == self.chest_pos
+                and self.has_key
+                and not self.chest_open
+            ):
+                self.chest_open = True
+                reward += 2
+
+        success = not self.is_dead and self.all_rewards_collected()
+        done = self.is_dead or success
+        termination_reason = "fire" if self.is_dead else (
+            "completed" if success else None
+        )
+
+        return self.get_state(), reward, done, {
+            "success": success,
+            "died": self.is_dead,
+            "termination_reason": termination_reason,
+        }
 
     def render(self, message=""):
         if self.screen is None:
@@ -127,7 +152,7 @@ class GridWorld:
                     self.rows * TILE_SIZE + HUD_HEIGHT,
                 )
             )
-            pygame.display.set_caption("Level 0 Q-Learning")
+            pygame.display.set_caption("Classical RL Gridworld")
 
         if self.assets is None:
             self.assets = AssetManager()
@@ -150,6 +175,16 @@ class GridWorld:
                         center=rectangle.center
                     )
                     self.screen.blit(self.assets.rock, rock_rectangle)
+
+                if pos in self.fires:
+                    fire_index = (
+                        pygame.time.get_ticks() // 100
+                    ) % len(self.assets.fire)
+                    fire_sprite = self.assets.fire[fire_index]
+                    fire_rectangle = fire_sprite.get_rect(
+                        center=rectangle.center
+                    )
+                    self.screen.blit(fire_sprite, fire_rectangle)
 
                 if pos in self.apples:
                     apple_rectangle = self.assets.apple.get_rect(

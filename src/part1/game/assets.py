@@ -30,15 +30,16 @@ class AssetManager:
             for frame in self.player["right"]
         ]
 
-        # Objects and animals use 16x16 frames.
         self.apple = self._frame(
-            "Objects/Spring Crops.png",
-            column=12,
-            row=1,
-            frame_size=16,
-            output_size=TILE_SIZE // 2,
+            "Apple.png",
+            column=0,
+            row=0,
+            frame_size=32,
+            output_size=TILE_SIZE,
+            asset_root=PART1_ASSET_ROOT,
         )
 
+        # The farm-pack objects and animals use 16x16 frames.
         self.rock = self._frame(
             "Objects/Road copiar.png",
             column=0,
@@ -46,6 +47,21 @@ class AssetManager:
             frame_size=16,
             output_size=TILE_SIZE,
         )
+
+        # The fire sheet is an 8x8 grid of 100x100 cells. Crop the
+        # transparent padding from the first row to create an animation.
+        self.fire = [
+            self._region(
+                "9_brightfire_spritesheet.png",
+                x=column * 100 + 40,
+                y=32,
+                width=28,
+                height=42,
+                output_size=(TILE_SIZE * 2 // 3, TILE_SIZE),
+                asset_root=PART1_ASSET_ROOT,
+            )
+            for column in range(8)
+        ]
 
         self.chest_closed = self._frame(
             "RPG Chests.png",
@@ -116,6 +132,22 @@ class AssetManager:
             frame,
             (output_size, output_size),
         )
+
+    def _region(
+        self,
+        relative_path,
+        x,
+        y,
+        width,
+        height,
+        output_size,
+        asset_root=FARM_ASSET_ROOT,
+    ):
+        sheet = self._load_sheet(relative_path, asset_root)
+        source_rectangle = pygame.Rect(x, y, width, height)
+        frame = pygame.Surface((width, height), pygame.SRCALPHA)
+        frame.blit(sheet, (0, 0), source_rectangle)
+        return pygame.transform.scale(frame, output_size)
 
     def _row(self, relative_path, row, frame_count, frame_size):
         return [
