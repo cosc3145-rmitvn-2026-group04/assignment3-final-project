@@ -5,7 +5,7 @@ from gymnasium import Env, spaces
 from pygame import Surface
 from pygame.math import Vector2
 from pygame.font import Font
-from part2.ai.gym.agent import PlayerControllerAI
+from part2.ai.gym.agent import PlayerControllerAgent
 from part2.ai.gym.config import (
         MAX_ENEMY_SPAWNER_OBS,
         MAX_ENEMY_OBS,
@@ -41,7 +41,7 @@ class GameEnvironment(Env):
     ) -> None:
         super().__init__()
         self.render_mode = "rbg_array"
-        self.agent: Player = Player(PlayerControllerAI())
+        self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
         self.phases: dict[str, Any] = phases
         self.set_phase(0)

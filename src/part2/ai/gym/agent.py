@@ -2,7 +2,7 @@ from pygame import Event
 from part2.game.player import Action, PlayerController
 
 
-class PlayerControllerAI(PlayerController):
+class PlayerControllerAgent(PlayerController):
     def __init__(self) -> None:
         super().__init__()
 
