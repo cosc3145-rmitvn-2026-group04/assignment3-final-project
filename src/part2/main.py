@@ -26,21 +26,27 @@ def main() -> None:
             help="Train without graphics, evaluate the learned policy (agent playing the game), or manually play the game.")
     arg_parser.add_argument(
             "-c", "--control-style",
-            choices=[1, 2],
-            default=1,
-            help="Sets the control style for `train` mode."
+            choices=["1", "2"],
+            default="1",
+            help="Sets the control style for `train` mode. Default: 1."
     )
     arg_parser.add_argument(
             "-a", "--algorithm",
             choices=["PPO", "DQN"],
             default="PPO",
-            help="Sets the reinforcement learning algorithm for `train` mode."
+            help="Sets the reinforcement learning algorithm for `train` mode. Default: PPO."
+    )
+    arg_parser.add_argument(
+            "-s", "--seed",
+            type=int,
+            default=0,
+            help="If `mode` is set to `train`, sets RNG seed for the training environment. Default: 0."
     )
     arg_parser.add_argument(
             "-n", "--n-env",
             type=int,
             default=1,
-            help="If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores)."
+            help="If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1."
     )
     arg_parser.add_argument(
             "-M", "--model-path",
@@ -52,7 +58,7 @@ def main() -> None:
             "-p", "--start-phase",
             type=int,
             default=0,
-            help="If `mode` is set to `play` or `evaluate`, starts the game at the specified phase."
+            help="If `mode` is set to `play` or `evaluate`, starts the game at the specified phase. Default: 0."
     )
     args: Namespace = arg_parser.parse_args()
 
@@ -61,9 +67,9 @@ def main() -> None:
         case "train":
             action_style: ActionStyle
             match args.control_style:
-                case 1:
+                case "1":
                     action_style = ActionStyle.STYLE_A
-                case 2:
+                case "2":
                     action_style = ActionStyle.STYLE_B
                 case _:
                     raise ValueError("Unrecognized control style.")
@@ -82,11 +88,12 @@ def main() -> None:
                 if not model_path.resolve().parent.exists():
                     raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
             train(
-                    phases=phases,
                     action_style=action_style,
+                    phases=phases,
                     algorithm=algorithm,
-                    output_model=model_path,
-                    n_env=args.n_env)
+                    seed=args.seed,
+                    n_env=args.n_env,
+                    output_model=model_path)
         case "evaluate":
             model_path: Path = args.model_path
             if model_path.suffix != ".zip":

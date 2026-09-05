@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, SupportsFloat
+from collections.abc import Callable
 import numpy as np
 from gymnasium import Env, spaces
 from pygame import Surface
@@ -22,14 +23,21 @@ from part2.game.game import Game, GameStatus
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
 
-def make_environment(
+def make_environment_fn(
         action_style: ActionStyle,
         phases: dict[str, Any],
         seed: int | None = None
-) -> GameEnvironment:
-    environment: GameEnvironment = GameEnvironment(action_style, phases)
-    environment.reset(seed=seed)
-    return environment
+) -> Callable:
+    """
+    Generates wrapper a function returning a GameEnvironment for use in
+    multi-process parallel training with
+    stable_baselines3.common.vec_env.SubprocVecEnv
+    """
+    def _init() -> GameEnvironment:
+        environment: GameEnvironment = GameEnvironment(action_style, phases)
+        environment.reset(seed=seed)
+        return environment
+    return _init
 
 
 class GameEnvironment(Env):

@@ -89,7 +89,7 @@ python ./src/part2/main.py
 #### Arguments:
 
 ```txt
-usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-n N_ENV] [-M MODEL_PATH] [-p START_PHASE]
+usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_ENV] [-M MODEL_PATH] [-p START_PHASE]
 
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
@@ -98,21 +98,23 @@ options:
   -m {train,evaluate,play}, --mode {train,evaluate,play}
                         Train without graphics, evaluate the learned policy (agent playing the game), or manually play the game.
   -c {1,2}, --control-style {1,2}
-                        Sets the control style for `train` mode.
+                        Sets the control style for `train` mode. Default: 1.
   -a {PPO,DQN}, --algorithm {PPO,DQN}
-                        Sets the reinforcement learning algorithm for `train` mode.
+                        Sets the reinforcement learning algorithm for `train` mode. Default: PPO.
+  -s SEED, --seed SEED  If `mode` is set to `train`, sets RNG seed for the training environment. Default: 0.
   -n N_ENV, --n-env N_ENV
-                        If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores).
+                        If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1.
   -M MODEL_PATH, --model-path MODEL_PATH
                         If `mode` is set to `train` or `evaluate`, sets path to the output/input model. If `mode` is `train` and this is not specified, a default path in 'models/part2' will be
                         used.
   -p START_PHASE, --start-phase START_PHASE
-                        If `mode` is set to `play` or `evaluate`, starts the game at the specified phase.
+                        If `mode` is set to `play` or `evaluate`, starts the game at the specified phase. Default: 0.
 ```
 
 For more information, please use the `-h`, `-help`, or `--help` flag.
 
 #### Configuration files:
 
-- `src/part2/game_phases.json`: Contains the layout and data for all game phases.
-- `src/part2/rl_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
+- `src/part2/game_phases.json`: Contains the layout and data for all game phases of this module.
+- `src/part2/rl_model_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
+- `src/part2/rl_train_hparams.json`: Contains the hyperparameters for the RL training procedure of this module.
