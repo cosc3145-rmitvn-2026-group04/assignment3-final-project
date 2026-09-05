@@ -52,7 +52,7 @@ class AssetManager:
             column=5,
             row=0,
             frame_size=32,
-            output_size=TILE_SIZE // 2,
+            output_size=TILE_SIZE,
             asset_root=PART1_ASSET_ROOT,
         )
 
@@ -61,7 +61,7 @@ class AssetManager:
             column=5,
             row=3,
             frame_size=32,
-            output_size=TILE_SIZE // 2,
+            output_size=TILE_SIZE ,
             asset_root=PART1_ASSET_ROOT,
         )
 
