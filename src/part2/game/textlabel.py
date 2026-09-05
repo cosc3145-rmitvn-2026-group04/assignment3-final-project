@@ -38,5 +38,5 @@ def blit_lines(
             case TextAlignment.CENTER:
                 aligned_x = -text_surface.get_width() / 2
             case TextAlignment.RIGHT:
-                raise NotImplementedError("Not Implemented.")
+                raise NotImplementedError
         screen.blit(text_surface, Vector2(pos) + Vector2(aligned_x, line_count * line_height))
