@@ -112,3 +112,8 @@ options:
 ```
 
 For more information, please use the `-h`, `-help`, or `--help` flag.
+
+#### Configuration files:
+
+- `src/part2/game_phases.json`: Contains the layout and data for all game phases.
+- `src/part2/rl_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
