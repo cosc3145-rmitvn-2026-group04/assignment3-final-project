@@ -20,6 +20,8 @@ from part2.config import (
 
 
 def play(phases: dict[str, Any], start_phase: int = 0) -> None:
+    print("[ MODE: PLAY ]")
+
     pygame.init()
     pygame.display.set_caption("Space Defense - Deep RL Arena")
     screen: Surface = pygame.display.set_mode(Vector2(WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -109,3 +111,4 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
             break
 
     pygame.quit()
+    print("[ DONE ]")
