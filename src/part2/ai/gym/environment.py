@@ -94,14 +94,24 @@ class GameEnvironment(Env):
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
         reward: float = self.hparams["reward_step"]
 
+        previous_agent_position: Vector2 = self.game.player.position
+        previous_agent_rotation: float = self.game.player.rotation
         previous_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
+        previous_agent_health: int = self.game.player.health
         previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
         previous_enemy_count: int = len(self.game.enemy_pool.objects())
-        previous_agent_health: int = self.game.player.health
 
         _action: Action = self._actions[action.item()]
         self.agent.controller.update(delta, [], _action)
         self.game.update(delta, events=[])
+
+        current_agent_position: Vector2 = self.game.player.position
+        if current_agent_position.distance_squared_to(previous_agent_position) > 0:
+            reward += self.hparams["reward_agent_movement"]
+
+        current_agent_rotation: float = self.game.player.rotation
+        if current_agent_rotation - previous_agent_rotation > 0:
+            reward += self.hparams["reward_agent_rotation"]
 
         current_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
         agent_shot_count: int = previous_agent_bullet_count - current_agent_bullet_count
