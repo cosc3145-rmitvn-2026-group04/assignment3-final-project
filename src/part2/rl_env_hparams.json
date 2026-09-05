@@ -1,4 +1,4 @@
 {
-    "phase_progress_win_rate_threshold": 0.85,
-    "phase_progress_win_rate_episode_memory": 50
+    "phase_progress_win_rate_threshold": 0.8,
+    "phase_progress_win_rate_episode_memory": 10
 }

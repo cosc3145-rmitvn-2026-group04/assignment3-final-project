@@ -52,14 +52,13 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
                     if self.verbose > 2:
-                        rprint("[blue]-> Win rate %.2f (last %i eps) achieved for Phase index %i. Progressed to Phase index %i.[/blue]" % (
-                            self.win_rate_threshold,
+                        rprint("[cyan]-> Win rate (last %i eps) reached %.2f/%.2f for Phase index %i. Progress to Phase index %i.[/cyan]" % (
                             self.n_episodes,
+                            win_rate,
+                            self.win_rate_threshold,
                             current_phase_index,
                             next_phase_index,
                         ))
-                elif self.verbose > 2:
-                    rprint("[blue]-> Win rate %.2f achieved for all %i phases.[/blue]" % (self.win_rate_threshold, phases_count))
 
         return super()._on_step()
 
