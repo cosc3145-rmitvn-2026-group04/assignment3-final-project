@@ -33,6 +33,7 @@ class GameEnvironmentPhaseCallback(BaseCallback):
         self.win_rate_threshold: float = win_rate_threshold
         self.n_episodes: int = n_episodes
         self.episode_results: list[bool] = []
+        self.current_phase_index: int = 0
         super().__init__(verbose)
 
     def _on_step(self) -> bool:
@@ -46,18 +47,18 @@ class GameEnvironmentPhaseCallback(BaseCallback):
             self.episode_results = self.episode_results[-self.n_episodes:]
             win_rate: float = sum(self.episode_results) / len(self.episode_results)
             if win_rate >= self.win_rate_threshold:
-                current_phase_index: int = self.training_env.get_attr("current_phase_index")[0]
-                next_phase_index: int = current_phase_index + 1
+                self.current_phase_index: int = self.training_env.get_attr("current_phase_index")[0]
+                next_phase_index: int = self.current_phase_index + 1
                 phases_count: int = len(self.training_env.get_attr("phases")[0]["phases"])
                 if next_phase_index < phases_count - 1:
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
                     if self.verbose > 2:
-                        rprint("[cyan]-> Win rate %.2f/%.2f (last %i eps) current Phase (%i). Progress to next Phase (%i).[/cyan]" % (
+                        rprint("[cyan]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/cyan]" % (
                             self.n_episodes,
                             win_rate,
                             self.win_rate_threshold,
-                            current_phase_index,
+                            self.current_phase_index,
                             next_phase_index,
                         ))
 
@@ -159,7 +160,7 @@ def train(
             str(TRAIN_HYPERPARAMS_CONFIG_FILE)
         ))
         print(json.dumps(train_hyperparams, indent=2))
-    elif verbose > 0:
+    else:
         rprint("[green]-> Training started on %d thread(s).[/green]" % (n_threads))
 
     model.learn(
@@ -167,8 +168,9 @@ def train(
             callback=[env_phase_callback],
             progress_bar=(verbose > 1))
 
+    rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
-        rprint("[green]-> Training finished.[/green]")
+        print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
     # ==========================
 
     # ====== Model Export ======
