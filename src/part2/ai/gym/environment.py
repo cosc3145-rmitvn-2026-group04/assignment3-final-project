@@ -3,20 +3,9 @@ from typing import Any, SupportsFloat
 from collections.abc import Callable
 import numpy as np
 from gymnasium import Env, spaces
-from pygame import Surface
 from pygame.math import Vector2
-from pygame.font import Font
 from part2.ai.gym.agent import PlayerControllerAgent
-from part2.ai.gym.config import (
-        MAX_ENEMY_SPAWNER_OBS,
-        MAX_ENEMY_OBS,
-        REWARD_STEP,
-        REWARD_AGENT_SHOOT,
-        REWARD_AGENT_HURT,
-        REWARD_ENEMY_SPAWNER_KILL,
-        REWARD_ENEMY_KILL,
-        REWARD_WIN,
-        REWARD_LOSS)
+from part2.ai.gym.config import get_hyperparameters
 from part2.game.player import Player, Action, ActionStyle, ACTIONS
 from part2.game.enemy import EnemySpawner, Enemy
 from part2.game.game import Game, GameStatus
@@ -49,6 +38,7 @@ class GameEnvironment(Env):
     ) -> None:
         super().__init__()
         self.render_mode = None
+        self.hparams: dict[str, Any] = get_hyperparameters()
         self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
         self.phases: dict[str, Any] = phases
@@ -61,18 +51,21 @@ class GameEnvironment(Env):
         # - is_invulnerable is either -1.0 (False) or 1.0 (True).
         player_observation_vector_len: int = 8
 
-        # Enemy spawner observation (normalized): [rel_x, rel_y, health, exist] for the closest MAX_ENEMY_SPAWNER_OBS enemy spawner.
-        # Enemy observation (normalized): [rel_x, rel_y, exist] for the closest MAX_ENEMY_OBS enemies.
+        # Enemy spawner observation (normalized): [rel_x, rel_y, health, exist] for the closest "max_enemy_spawner_obs" enemy spawner.
+        # Enemy observation (normalized): [rel_x, rel_y, exist] for the closest "max_enemy_obs" enemies.
         #
         # Note:
         # - rel_x and rel_y are the coordinates of the enemy spawner / enemy
         # relative to the agent.
         # - If the number of closest enemy spawners / enemies is smaller
-        # than the max observation (MAX_ENEMY_SPAWNER_OBS and MAX ENEMY_OBS),
-        # the extra empty space will have the exist component set to -1.0
-        # (False), and everything else set to 0.0. For spaces with valid data,
-        # the exist component is set to 1.0 (True).
-        enemies_observation_vector_len: int = MAX_ENEMY_SPAWNER_OBS * 4 + MAX_ENEMY_OBS * 3
+        # than the max observation ("max_enemy_spawner_obs" and
+        # "max enemy_obs"), the extra empty space will have the exist component
+        # set to -1.0 (False), and everything else set to 0.0. For spaces with
+        # valid data, the exist component is set to 1.0 (True).
+        enemies_observation_vector_len: int = (
+            self.hparams["max_enemy_spawner_obs"] * 4
+            + self.hparams["max_enemy_obs"] * 3
+        )
 
         self.observation_space = spaces.Box(
                 low=-1.0, high=1.0,
@@ -99,7 +92,7 @@ class GameEnvironment(Env):
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
-        reward: float = REWARD_STEP
+        reward: float = self.hparams["reward_step"]
 
         previous_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
         previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
@@ -112,19 +105,19 @@ class GameEnvironment(Env):
 
         current_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
         agent_shot_count: int = previous_agent_bullet_count - current_agent_bullet_count
-        reward += agent_shot_count * REWARD_AGENT_SHOOT
-
-        current_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
-        enemy_spawner_kill_count: int = previous_enemy_spawner_count - current_enemy_spawner_count
-        reward += enemy_spawner_kill_count * REWARD_ENEMY_SPAWNER_KILL
-
-        current_enemy_count: int = len(self.game.enemy_pool.objects())
-        enemy_kill_count: int = previous_enemy_count - current_enemy_count
-        reward += enemy_kill_count * REWARD_ENEMY_KILL
+        reward += agent_shot_count * self.hparams["reward_agent_shoot"]
 
         current_agent_health: int = self.game.player.health
         agent_health_loss: int = previous_agent_health - current_agent_health
-        reward += agent_health_loss * REWARD_AGENT_HURT
+        reward += agent_health_loss * self.hparams["reward_agent_hurt"]
+
+        current_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
+        enemy_spawner_kill_count: int = previous_enemy_spawner_count - current_enemy_spawner_count
+        reward += enemy_spawner_kill_count * self.hparams["reward_enemy_spawner_kill"]
+
+        current_enemy_count: int = len(self.game.enemy_pool.objects())
+        enemy_kill_count: int = previous_enemy_count - current_enemy_count
+        reward += enemy_kill_count * self.hparams["reward_enemy_kill"]
 
         terminated: bool = False
         truncated: bool = False
@@ -132,9 +125,9 @@ class GameEnvironment(Env):
             terminated = True
             match self.game.status:
                 case GameStatus.GAME_WON:
-                    reward += REWARD_WIN
+                    reward += self.hparams["reward_phase_win"]
                 case GameStatus.GAME_LOST:
-                    reward += REWARD_LOSS
+                    reward += self.hparams["reward_phase_loss"]
 
         return self._get_observation(), reward, terminated, truncated, self._get_info()
 
@@ -163,7 +156,7 @@ class GameEnvironment(Env):
         enemy_spawers: list[EnemySpawner] = self.game.enemy_spawner_pool.objects()
         enemy_spawers.sort(key=lambda enemy_spawner: self.agent.position.distance_squared_to(enemy_spawner.position))
         enemy_spawner_index: int
-        for enemy_spawner_index in range(MAX_ENEMY_SPAWNER_OBS):
+        for enemy_spawner_index in range(self.hparams["max_enemy_spawner_obs"]):
             if enemy_spawner_index >= len(enemy_spawers):
                 enemy_observation.extend([0.0, 0.0, 0.0, -1.0])
                 continue
@@ -179,7 +172,7 @@ class GameEnvironment(Env):
         enemies: list[Enemy] = self.game.enemy_pool.objects()
         enemies.sort(key=lambda enemy: self.agent.position.distance_squared_to(enemy.position))
         enemy_index: int
-        for enemy_index in range(MAX_ENEMY_OBS):
+        for enemy_index in range(self.hparams["max_enemy_obs"]):
             if enemy_index >= len(enemies):
                 enemy_observation.extend([0.0, 0.0, -1.0])
                 continue
