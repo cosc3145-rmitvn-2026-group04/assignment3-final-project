@@ -67,7 +67,7 @@ def main():
     model_path = get_model_path(arguments.level, config["algo_name"])
     
     if arguments.mode == "train":
-        agent = QLearningAgent(ALPHA, GAMMA)
+        agent = config["agent_cls"](ALPHA, GAMMA)
         run_training(
             env = env,
             agent = agent,
