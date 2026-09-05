@@ -47,7 +47,7 @@ def evaluate(
     states: Any
 
     pygame.init()
-    pygame.display.set_caption("Space Defense - Deep RL Arena")
+    pygame.display.set_caption("Space Defense - Deep RL Arena [ MODE: EVALUATE ]")
     screen: Surface = pygame.display.set_mode(Vector2(WINDOW_WIDTH, WINDOW_HEIGHT))
     clock: Clock = pygame.time.Clock()
     fonts: dict[str, Font] = {
@@ -116,6 +116,11 @@ def evaluate(
                 and info["game_status"] == GameStatus.GAME_WON
                 and phase_index < len(phases["phases"]) - 1
             ):
+                if verbose > 0:
+                    rprint("[cyan]-> Phase %s. Cumulative reward: %.2f[/cyan]" % (
+                        "won" if info["game_status"] == GameStatus.GAME_WON else "lost",
+                        total_reward
+                    ))
                 break
             # ==========================
 
@@ -127,11 +132,6 @@ def evaluate(
             pygame.display.flip()
             # ==========================
 
-        if verbose > 0:
-            rprint("[cyan]-> Phase %s. Cumulative reward: %.2f[/cyan]" % (
-                "won" if info["game_status"] == GameStatus.GAME_WON else "lost",
-                total_reward
-            ))
         if not running:
             match info["game_status"]:
                 case GameStatus.GAME_IN_PROGRESS:

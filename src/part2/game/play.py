@@ -20,11 +20,11 @@ from part2.config import (
         COLOR_BACKGROUND)
 
 
-def play(phases: dict[str, Any], start_phase: int = 0) -> None:
+def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None:
     rprint("[bold yellow][ MODE: PLAY ][/bold yellow]")
 
     pygame.init()
-    pygame.display.set_caption("Space Defense - Deep RL Arena")
+    pygame.display.set_caption("Space Defense - Deep RL Arena [ MODE: PLAY ]")
     screen: Surface = pygame.display.set_mode(Vector2(WINDOW_WIDTH, WINDOW_HEIGHT))
     clock: Clock = pygame.time.Clock()
     fonts: dict[str, Font] = {
@@ -47,6 +47,7 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         help_hud: HelpHUD = HelpHUD(fonts)
 
         debug_render: bool = False
+        verbose_phase_lost_printed: bool = False
         running: bool = True
         while running:
             # ====== Frame Setup =======
@@ -76,6 +77,7 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
                         player.controller = PlayerControllerInputStyleA()
                     player.controller.player = player
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                    verbose_phase_lost_printed = False
                     game.reset()
             # ==========================
 
@@ -93,12 +95,20 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
                         if isinstance(player.controller, PlayerControllerInputStyleB)
                         else None
                     ))
-            if (
-                game.game_over
-                and game.status == GameStatus.GAME_WON
-                and phase_index < len(phases["phases"]) - 1
-            ):
-                break
+            if game.game_over:
+                if verbose > 0:
+                    match game.status:
+                        case GameStatus.GAME_WON:
+                            rprint("[cyan]-> Phase %s won.[/cyan]" % (
+                                phases["phases"][phase_index]["phase_name"]
+                            ))
+                        case GameStatus.GAME_LOST if not verbose_phase_lost_printed:
+                            rprint("[cyan]-> Phase %s lost. Press [R] to restart.[/cyan]" % (
+                                phases["phases"][phase_index]["phase_name"]
+                            ))
+                            verbose_phase_lost_printed = True
+                if game.status == GameStatus.GAME_WON and phase_index < len(phases["phases"]) - 1:
+                    break
             # ==========================
 
             # ======= Frame Draw =======
@@ -109,6 +119,13 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
             # ==========================
 
         if not running:
+            match game.status:
+                case GameStatus.GAME_IN_PROGRESS:
+                    if verbose > 0:
+                        rprint("[blue]-> Game force terminated.[/blue]")
+                case GameStatus.GAME_WON:
+                    if verbose > 0:
+                        rprint("[blue]-> Game won.[/blue]")
             break
 
     pygame.quit()

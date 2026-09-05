@@ -110,7 +110,7 @@ options:
   -p START_PHASE, --start-phase START_PHASE
                         If `mode` is set to 'play' or 'evaluate', starts the game at the specified phase. Default: 0.
   -v VERBOSE, --verbose VERBOSE
-                        Sets the CLI print verbose level. Default: 0.
+                        Sets the CLI output verbose level. Default: 0.
 ```
 
 For more information, please use the `-h`, `-help`, or `--help` flag.

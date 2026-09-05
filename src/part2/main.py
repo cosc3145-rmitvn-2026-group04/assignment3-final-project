@@ -74,7 +74,7 @@ def main() -> None:
             "-v", "--verbose",
             type=int,
             default=0,
-            help="Sets the CLI print verbose level. Default: 0."
+            help="Sets the CLI output verbose level. Default: 0."
     )
     args: Namespace = arg_parser.parse_args()
 
@@ -128,7 +128,7 @@ def main() -> None:
         case "play":
             if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
                 raise RuntimeError("Invalid start phase specified.")
-            play(phases=phases, start_phase=args.start_phase)
+            play(phases=phases, start_phase=args.start_phase, verbose=args.verbose)
 
 
 if __name__ == "__main__":
