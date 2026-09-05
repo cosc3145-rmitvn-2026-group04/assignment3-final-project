@@ -4,11 +4,10 @@ from enum import Enum
 import psutil
 import json
 from rich import print as rprint
-import torch
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from part2.ai.gym.environment import make_environment_fn
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
