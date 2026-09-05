@@ -101,6 +101,7 @@ class HelpHUD(UserInterface):
                     else "ERR"
                 )
                 help_text = "%s\n%s" % (help_text, control_keybinds[control_style])
+                help_text += "  [R] Restart Phase"
         blit_lines(
                 self.surface,
                 Vector2(10, 10),
