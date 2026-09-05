@@ -48,7 +48,7 @@ class GameEnvironment(Env):
             phases: dict[str, Any]
     ) -> None:
         super().__init__()
-        self.render_mode = "rbg_array"
+        self.render_mode = None
         self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
         self.phases: dict[str, Any] = phases
@@ -137,9 +137,6 @@ class GameEnvironment(Env):
                     reward += REWARD_LOSS
 
         return self._get_observation(), reward, terminated, truncated, self._get_info()
-
-    def render_custom(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
-        self.game.render(screen, fonts, debug)
 
     def _get_observation(self) -> np.ndarray:
         """Returns the observation calculated from the current game state."""
