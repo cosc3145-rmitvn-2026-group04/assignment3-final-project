@@ -195,7 +195,7 @@ class GameEnvironment(Env):
                 1.0
             ])
 
-        return np.ndarray(agent_observation + enemy_observation, dtype=np.float32)
+        return np.array(agent_observation + enemy_observation, dtype=np.float32)
 
     def _get_info(self) -> dict[str, Any]:
         """Returns auxiliary information of the current game state."""

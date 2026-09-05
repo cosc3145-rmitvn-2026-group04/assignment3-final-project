@@ -43,9 +43,9 @@ class GameEnvironmentPhaseCallback(BaseCallback):
             self.episode_results = self.episode_results[-self.n_episodes:]
             win_rate: float = sum(self.episode_results) / len(self.episode_results)
             if win_rate >= self.win_rate_threshold:
-                current_phase_index: int = self.training_env.env_method("get_attr", "current_phase_index")[0]
+                current_phase_index: int = self.training_env.env_method("getattr", "current_phase_index")[0]
                 next_phase_index: int = current_phase_index + 1
-                phases_count: int = len(self.training_env.env_method("get_attr", "phases")[0]["phases"])
+                phases_count: int = len(self.training_env.env_method("getattr", "phases")[0]["phases"])
                 if next_phase_index < phases_count - 1:
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
