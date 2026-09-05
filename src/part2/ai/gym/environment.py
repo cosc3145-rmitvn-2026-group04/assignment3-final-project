@@ -95,7 +95,7 @@ class GameEnvironment(Env):
     ) -> tuple[Any, dict[str, Any]]:
         super().reset(seed=seed, options=options)
         self.game.reset()
-        return self._get_observation, self._get_info()
+        return self._get_observation(), self._get_info()
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
@@ -136,7 +136,7 @@ class GameEnvironment(Env):
                 case GameStatus.GAME_LOST:
                     reward += REWARD_LOSS
 
-        return self._get_observation, reward, terminated, truncated, self._get_info()
+        return self._get_observation(), reward, terminated, truncated, self._get_info()
 
     def render_custom(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
         self.game.render(screen, fonts, debug)
