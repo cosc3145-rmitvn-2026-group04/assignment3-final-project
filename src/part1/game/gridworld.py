@@ -65,6 +65,12 @@ class GridWorld:
             self.chest_open,
             tuple(sorted(self.monsters)),
         )
+
+    def all_rewards_collected(self):
+        """Return True when no apple or unopened chest reward remains."""
+        apples_collected = len(self.apples) == 0
+        chest_collected = self.chest_pos is None or self.chest_open
+        return apples_collected and chest_collected
         
     # TODO: add monsters
         
@@ -88,28 +94,27 @@ class GridWorld:
             self.player_position = destination
 
         reward = 0
-        done = False
-
         # pickup apple
         if self.player_position in self.apples:
             self.apples.remove(self.player_position)
             reward = 1
-
-        # done = len(self.apples) == 0
         
         # pickup key
         if self.key_pos and self.player_position == self.key_pos and not self.has_key:
             self.has_key = True
-            reward += 2.0
+            reward += 0.0
 
         # pickup chest
-        if self.chest_pos and self.player_position == self.chest_pos:
-            if self.has_key:
-                self.chest_open = True
-                reward += 10.0
-                done = True
-            else:
-                reward -= 0.5  # small penalty for visiting locked chest early
+        if (
+            self.chest_pos
+            and self.player_position == self.chest_pos
+            and self.has_key
+            and not self.chest_open
+        ):
+            self.chest_open = True
+            reward += 2.0
+
+        done = self.all_rewards_collected()
 
         return self.get_state(), reward, done, {}
 
@@ -151,16 +156,29 @@ class GridWorld:
                         center=rectangle.center
                     )
                     self.screen.blit(self.assets.apple, apple_rectangle)
-                    
-                # TODO: draw key
-                # if pos == self.key_pos and not self.has_key:
-                
-                # TODO: draw chest
-                # if pos == self.chest_pos:
-                #     if self.chest_open:
-                #     else:
-                
-                # TODO: draw monster
+
+                if pos == self.key_pos and not self.has_key:
+                    key_rectangle = self.assets.key.get_rect(
+                        center=rectangle.center
+                    )
+                    self.screen.blit(self.assets.key, key_rectangle)
+
+                if pos == self.chest_pos:
+                    chest_sprite = (
+                        self.assets.chest_open
+                        if self.chest_open
+                        else self.assets.chest_closed
+                    )
+                    chest_rectangle = chest_sprite.get_rect(
+                        center=rectangle.center
+                    )
+                    self.screen.blit(chest_sprite, chest_rectangle)
+
+                if pos in self.monsters:
+                    monster_rectangle = self.assets.monster.get_rect(
+                        center=rectangle.center
+                    )
+                    self.screen.blit(self.assets.monster, monster_rectangle)
 
         player_row, player_col = self.player_position
         animation_index = (

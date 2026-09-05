@@ -71,6 +71,7 @@ class AssetManager:
             frame_size=16,
             output_size=TILE_SIZE // 2,
         )
+        self.key = self._create_key()
 
     def _load_sheet(self, relative_path):
         if relative_path not in self._sheets:
@@ -124,3 +125,21 @@ class AssetManager:
             )
             for column in range(frame_count)
         ]
+
+    def _create_key(self):
+        """Create a key icon with Pygame shapes when no sprite is available."""
+        size = TILE_SIZE // 2
+        key = pygame.Surface((size, size), pygame.SRCALPHA)
+        outline = (116, 76, 18)
+        gold = (255, 205, 55)
+
+        pygame.draw.circle(key, outline, (9, 9), 8, 5)
+        pygame.draw.circle(key, gold, (9, 9), 7, 3)
+        pygame.draw.line(key, outline, (14, 14), (27, 27), 7)
+        pygame.draw.line(key, gold, (14, 14), (27, 27), 3)
+        pygame.draw.line(key, outline, (22, 22), (27, 17), 5)
+        pygame.draw.line(key, gold, (22, 22), (27, 17), 2)
+        pygame.draw.line(key, outline, (26, 26), (30, 22), 5)
+        pygame.draw.line(key, gold, (26, 26), (30, 22), 2)
+
+        return key
