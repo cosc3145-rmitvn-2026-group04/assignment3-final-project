@@ -91,7 +91,7 @@ def train(
 
     # === Environment Config ===
     # Include support for multi-process parallel training.
-    vec_env: SubprocVecEnv = SubprocVecEnv([
+    vec_env: DummyVecEnv = DummyVecEnv([
         make_environment_fn(action_style, phases, seed + env_index)
         for env_index in range(n_env)
     ])
