@@ -150,7 +150,9 @@ def train(
     model.learn(
             **train_hyperparams,
             callback=[env_phase_callback],
-            progress_bar=(verbose > 0))
+            progress_bar=(verbose > 1))
+    if verbose > 0:
+        print("-> Training finished.")
     # ==========================
 
     # ====== Model Export ======

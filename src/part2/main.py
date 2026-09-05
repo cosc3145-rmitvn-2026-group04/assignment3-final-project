@@ -60,6 +60,12 @@ def main() -> None:
             default=0,
             help="If `mode` is set to `play` or `evaluate`, starts the game at the specified phase. Default: 0."
     )
+    arg_parser.add_argument(
+            "-v", "--verbose",
+            type=int,
+            default=0,
+            help="Sets the CLI print verbose level. Default: 0."
+    )
     args: Namespace = arg_parser.parse_args()
 
     phases: dict[str, Any] = get_phases()
@@ -93,7 +99,8 @@ def main() -> None:
                     algorithm=algorithm,
                     seed=args.seed,
                     n_env=args.n_env,
-                    output_model=model_path)
+                    output_model=model_path,
+                    verbose=args.verbose)
         case "evaluate":
             model_path: Path = args.model_path
             if model_path.suffix != ".zip":
@@ -103,7 +110,8 @@ def main() -> None:
             evaluate(
                     phases=phases,
                     start_phase=args.start_phase,
-                    input_model=model_path)
+                    input_model=model_path,
+                    verbose=args.verbose)
         case "play":
             if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
                 raise RuntimeError("Invalid start phase specified.")

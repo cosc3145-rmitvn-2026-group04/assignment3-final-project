@@ -89,7 +89,7 @@ python ./src/part2/main.py
 #### Arguments:
 
 ```txt
-usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_ENV] [-M MODEL_PATH] [-p START_PHASE]
+usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_ENV] [-M MODEL_PATH] [-p START_PHASE] [-v VERBOSE]
 
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
@@ -109,6 +109,8 @@ options:
                         used.
   -p START_PHASE, --start-phase START_PHASE
                         If `mode` is set to `play` or `evaluate`, starts the game at the specified phase. Default: 0.
+  -v VERBOSE, --verbose VERBOSE
+                        Sets the CLI print verbose level. Default: 0.
 ```
 
 For more information, please use the `-h`, `-help`, or `--help` flag.
