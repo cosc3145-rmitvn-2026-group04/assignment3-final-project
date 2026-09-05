@@ -4,6 +4,7 @@ from enum import Enum
 import psutil
 import json
 from rich import print as rprint
+import torch
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
@@ -69,14 +70,16 @@ def train(
         algorithm: LearningAlgorithmType,
         seed: int = 0,
         n_threads: int = 1,
+        device: str = "auto",
         output_model: Path | None = None,
         verbose: int = 0
 ) -> None:
     rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
 
-    available_cpu_count: int = len(psutil.Process().cpu_affinity())
-    if not 0 < n_threads <= available_cpu_count:
-        raise ValueError("`n_threads` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
+    if device in ["cpu", "meta", "xla", "xpu", "mkldnn"]:
+        available_cpu_count: int = len(psutil.Process().cpu_affinity())
+        if not 0 < n_threads <= available_cpu_count:
+            raise ValueError("`n_threads` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
 
     filename_algorithm: str = algorithm.name.lower()
     filename_action_style: str = ""
@@ -124,7 +127,8 @@ def train(
                     policy="MlpPolicy",
                     env=vec_env,
                     **model_hyperparams["PPO"],
-                    verbose=verbose)
+                    verbose=verbose,
+                    device=device)
             if verbose > 1:
                 rprint("[blue]-> PPO model initialized (config: '%s'):.[/blue]" % (str(MODEL_HYPERPARAMS_CONFIG_FILE)))
                 print(json.dumps(model_hyperparams["PPO"], indent=2))
@@ -135,7 +139,8 @@ def train(
                     policy="MlpPolicy",
                     env=vec_env,
                     **model_hyperparams["DQN"],
-                    verbose=verbose)
+                    verbose=verbose,
+                    device=device)
             if verbose > 1:
                 rprint("[blue]-> DQN model initialized (config: '%s'):.[/blue]" % (str(MODEL_HYPERPARAMS_CONFIG_FILE)))
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
