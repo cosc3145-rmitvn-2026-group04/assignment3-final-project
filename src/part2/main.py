@@ -28,37 +28,47 @@ def main() -> None:
             "-c", "--control-style",
             choices=["1", "2"],
             default="1",
-            help="Sets the control style for `train` mode. Default: 1."
+            help="Sets the control style for 'train' mode. Default: '1'."
     )
     arg_parser.add_argument(
             "-a", "--algorithm",
             choices=["PPO", "DQN"],
             default="PPO",
-            help="Sets the reinforcement learning algorithm for `train` mode. Default: PPO."
+            help="Sets the reinforcement learning algorithm for 'train' mode. Default: 'PPO'."
     )
     arg_parser.add_argument(
             "-s", "--seed",
             type=int,
             default=0,
-            help="If `mode` is set to `train`, sets RNG seed for the training environment. Default: 0."
+            help="If `mode` is set to 'train', sets RNG seed for the training environment. Default: 0."
     )
     arg_parser.add_argument(
             "-n", "--n-threads",
             type=int,
             default=1,
-            help="If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1."
+            help="If `mode` is set to 'train', sets the number of parallel training processes (limited by the number of available CPU cores). Has no effect if `device` is not 'cpu'. Default: 1."
+    )
+    arg_parser.add_argument(
+            "-d", "--device",
+            choices=[
+                "auto", "cpu", "cuda", "ipu", "xpu", "mkldnn", "opengl",
+                "opencl", "ideep", "hip", "ve", "fpga", "maia", "xla", "lazy",
+                "vulkan", "mps", "meta", "hpu", "mtia", "privateuseone",
+            ],
+            default="auto",
+            help="If `mode` is set to 'train', sets the device used by the training algorithm. Default: 'auto'."
     )
     arg_parser.add_argument(
             "-M", "--model-path",
             type=Path,
             default=None,
-            help="If `mode` is set to `train` or `evaluate`, sets path to the output/input model. If `mode` is `train` and this is not specified, a default path in 'models/part2' will be used."
+            help="If `mode` is set to 'train' or 'evaluate', sets path to the output/input model. If `mode` is 'train' and this is not specified, a default path in 'models/part2' will be used."
     )
     arg_parser.add_argument(
             "-p", "--start-phase",
             type=int,
             default=0,
-            help="If `mode` is set to `play` or `evaluate`, starts the game at the specified phase. Default: 0."
+            help="If `mode` is set to 'play' or 'evaluate', starts the game at the specified phase. Default: 0."
     )
     arg_parser.add_argument(
             "-v", "--verbose",
@@ -99,6 +109,7 @@ def main() -> None:
                     algorithm=algorithm,
                     seed=args.seed,
                     n_threads=args.n_threads,
+                    device=args.device,
                     output_model=model_path,
                     verbose=args.verbose)
         case "evaluate":
