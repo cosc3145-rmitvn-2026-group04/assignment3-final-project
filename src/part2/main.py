@@ -197,16 +197,26 @@ def main() -> None:
                     algorithm = LearningAlgorithmType.DQN
                 case _:
                     raise ValueError("Unrecognized RL algorithm.")
+            model_path: Path = args.model_path
+            if model_path.suffix != ".zip":
+                raise ValueError("Output model must be a .zip file.")
+            if not model_path.resolve().parent.exists():
+                raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
             train(
                     phases=phases,
                     action_style=action_style,
                     algorithm=algorithm,
-                    output_model=Path(args.model_path))
+                    output_model=model_path)
         case "evaluate":
+            model_path: Path = args.model_path
+            if model_path.suffix != ".zip":
+                raise ValueError("Input model must be a .zip file.")
+            if not model_path.exists():
+                raise FileNotFoundError("Model not found at '%s'" % (model_path))
             evaluate(
                     phases=phases,
                     start_phase=args.start_phase,
-                    input_model=Path(args.model_path))
+                    input_model=model_path)
         case "play":
             if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
                 raise RuntimeError("Invalid start phase specified.")
