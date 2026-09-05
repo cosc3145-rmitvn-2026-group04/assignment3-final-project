@@ -1,6 +1,6 @@
 import pygame
 from .assets import AssetManager
-
+import random
 from .config import TILE_SIZE
 
 HUD_HEIGHT = 80
@@ -23,6 +23,7 @@ class GridWorld:
         self.start_position = None
         self.key_pos = None
         self.chest_pos = None
+        self.initial_monsters = set()
         self.screen = None
         self.assets = None
         self.player_direction = "down"
@@ -39,6 +40,8 @@ class GridWorld:
                     self.key_pos = (row, col)
                 elif tile == "C":
                     self.chest_pos = (row, col)
+                elif tile == "M":
+                    self.initial_monsters.add((row,col))
 
         if self.start_position is None:
             raise ValueError("Level requires a starting tile")
@@ -49,6 +52,7 @@ class GridWorld:
         self.player_position = self.start_position
         self.player_direction = "down"
         self.apples = set(self.initial_apples)
+        self.monsters = set(self.initial_monsters)
         self.has_key = False
         self.chest_open = False
         return self.get_state()
@@ -59,8 +63,11 @@ class GridWorld:
             tuple(sorted(self.apples)),
             self.has_key,
             self.chest_open,
+            tuple(sorted(self.monsters)),
         )
-
+        
+    # TODO: add monsters
+        
     def step(self, action):
         row, col = self.player_position
         row_change, col_change = ACTION_DELTAS[action]
@@ -147,16 +154,13 @@ class GridWorld:
                     
                 # TODO: draw key
                 # if pos == self.key_pos and not self.has_key:
-                #     if hasattr(self.assets, "key"):
-                #         self.screen.blit(self.assets.key, self.assets.key.get_rect(center = rectangle.center))
                 
                 # TODO: draw chest
                 # if pos == self.chest_pos:
                 #     if self.chest_open:
-                #         chest_sprite = self.assets.chest_open 
                 #     else:
-                #         chest_sprite = self.assets.chest_closed
-                #     self.screen.blit(chest_sprite, chest_sprite.get_rect(center = rectangle.center))
+                
+                # TODO: draw monster
 
         player_row, player_col = self.player_position
         animation_index = (
