@@ -69,10 +69,10 @@ class GameEnvironment(Env):
         # the exist component is set to 1.0 (True).
         enemies_observation_vector_len: int = MAX_ENEMY_SPAWNER_OBS * 4 + MAX_ENEMY_OBS * 3
 
-        self.observation_space = spaces.Dict({
-            "agent": spaces.Box(low=-1.0, high=1.0, shape=(player_observation_vector_len,), dtype=np.float32),
-            "enemy": spaces.Box(low=-1.0, high=1.0, shape=(enemies_observation_vector_len,), dtype=np.float32)
-        })
+        self.observation_space = spaces.Box(
+                low=-1.0, high=1.0,
+                shape=(player_observation_vector_len + enemies_observation_vector_len,),
+                dtype=np.float32)
 
         self.action_space = spaces.Discrete(len(ACTIONS[action_style]))
         self._actions: dict[int, Action] = ACTIONS[action_style]
@@ -130,7 +130,7 @@ class GameEnvironment(Env):
     def render_custom(self, screen: Surface, fonts: dict[str, Font], debug: bool = False) -> None:
         self.game.render(screen, fonts, debug)
 
-    def _get_observation(self) -> dict[str, np.ndarray]:
+    def _get_observation(self) -> np.ndarray:
         """Returns the observation calculated from the current game state."""
         environment_width: float = float(WINDOW_WIDTH)
         environment_height: float = float(WINDOW_HEIGHT - MAIN_HUD_HEIGHT)
@@ -184,10 +184,7 @@ class GameEnvironment(Env):
                 1.0
             ])
 
-        return {
-            "agent": np.ndarray(agent_observation, dtype=np.float32),
-            "enemy": np.ndarray(enemy_observation, dtype=np.float32),
-        }
+        return np.ndarray(agent_observation + enemy_observation, dtype=np.float32)
 
     def _get_info(self) -> dict[str, Any]:
         """Returns auxiliary information calculated from the current game state."""

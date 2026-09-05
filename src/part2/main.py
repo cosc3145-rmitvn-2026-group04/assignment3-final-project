@@ -5,6 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from typing import Any
 from enum import Enum
 from argparse import ArgumentParser, Namespace
+from stable_baselines3 import PPO, DQN
 import pygame
 from pygame import Surface
 from pygame.time import Clock
