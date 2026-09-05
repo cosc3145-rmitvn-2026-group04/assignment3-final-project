@@ -90,7 +90,7 @@ python ./src/part2/main.py
 #### Arguments:
 
 ```txt
-usage: main.py [-h] -m {train,evaluate,play} [-M MODEL_PATH] [-p START_PHASE]
+usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-M MODEL_PATH] [-p START_PHASE]
 
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
@@ -98,10 +98,14 @@ options:
   -h, --help            show this help message and exit
   -m {train,evaluate,play}, --mode {train,evaluate,play}
                         Train without graphics, evaluate the learned policy (agent playing the game), or manually play the game.
+  -c {1,2}, --control-style {1,2}
+                        Sets the control style for `train` mode.
+  -a {PPO,DQN}, --algorithm {PPO,DQN}
+                        Sets the reinforcement learning algorithm for `train` mode.
   -M MODEL_PATH, --model-path MODEL_PATH
                         If `mode` is set to `train` or `evaluate`, overrides path to the output/input model.
   -p START_PHASE, --start-phase START_PHASE
-                        If `mode` is set to `play`, start the game at the specified phase.
+                        If `mode` is set to `play` or `evaluate`, starts the game at the specified phase.
 ```
 
 For more information, please use the `-h`, `-help`, or `--help` flag.

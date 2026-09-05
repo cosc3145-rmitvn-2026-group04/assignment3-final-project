@@ -3,6 +3,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from typing import Any
+from enum import Enum
 from argparse import ArgumentParser, Namespace
 import pygame
 from pygame import Surface
@@ -10,6 +11,7 @@ from pygame.time import Clock
 from pygame.math import Vector2
 from pygame.font import SysFont, Font
 from pygame.event import Event
+from part2.ai.environment import make_environment, GameEnvironment
 from part2.game.phase import get_phases
 from part2.game.player import (
         Player,
@@ -19,19 +21,31 @@ from part2.game.player import (
 from part2.game.game import Game, GameStatus
 from part2.game.hud import MainHUD, HelpHUD
 from part2.config import (
+        MODELS_DIR,
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         FPS,
         COLOR_BACKGROUND)
 
-# Verify models directory.
-MODELS_DIR: Path = Path(__file__).resolve().parents[2] / "models" / "part2"
-MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-def train(phases: dict[str, Any], output: Path | None = None) -> None:
+class LearningAlgorithmType(Enum):
+    PPO = 0  # Promixal Policy Optimization (on-policy).
+    DQN = 1  # Deep Q-Networks (off-policy).
+
+
+def train(
+        phases: dict[str, Any],
+        action_style: ActionStyle,
+        algorithm: LearningAlgorithmType,
+        output_model: Path | None = None
+) -> None:
     raise NotImplementedError  # TODO: Implement this.
 
-def evaluate(phases: dict[str, Any], input: Path | None = None) -> None:
+def evaluate(
+        phases: dict[str, Any],
+        start_phase: int = 0,
+        input_model: Path | None = None
+) -> None:
     raise NotImplementedError  # TODO: Implement this.
 
 def play(phases: dict[str, Any], start_phase: int = 0) -> None:
@@ -126,6 +140,8 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
     pygame.quit()
 
 def main() -> None:
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)  # Verify models directory.
+
     arg_parser: ArgumentParser = ArgumentParser(
             description="Assignment 3 [Undergrad] - Part 2: Arena Deep RL",
             allow_abbrev=True,
@@ -136,6 +152,18 @@ def main() -> None:
             required=True,
             help="Train without graphics, evaluate the learned policy (agent playing the game), or manually play the game.")
     arg_parser.add_argument(
+            "-c", "--control-style",
+            choices=[1, 2],
+            default=1,
+            help="Sets the control style for `train` mode."
+    )
+    arg_parser.add_argument(
+            "-a", "--algorithm",
+            choices=["PPO", "DQN"],
+            default="PPO",
+            help="Sets the reinforcement learning algorithm for `train` mode."
+    )
+    arg_parser.add_argument(
             "-M", "--model-path",
             type=Path,
             default=None,
@@ -145,16 +173,39 @@ def main() -> None:
             "-p", "--start-phase",
             type=int,
             default=0,
-            help="If `mode` is set to `play`, start the game at the specified phase."
+            help="If `mode` is set to `play` or `evaluate`, starts the game at the specified phase."
     )
     args: Namespace = arg_parser.parse_args()
 
     phases: dict[str, Any] = get_phases()
     match args.mode:
         case "train":
-            train(phases=phases, output=Path(args.model_path))
+            action_style: ActionStyle
+            match args.control_style:
+                case 1:
+                    action_style = ActionStyle.STYLE_A
+                case 2:
+                    action_style = ActionStyle.STYLE_B
+                case _:
+                    raise ValueError("Unrecognized control style.")
+            algorithm: LearningAlgorithmType
+            match args.algorithm:
+                case "PPO":
+                    algorithm = LearningAlgorithmType.PPO
+                case "DQN":
+                    algorithm = LearningAlgorithmType.DQN
+                case _:
+                    raise ValueError("Unrecognized RL algorithm.")
+            train(
+                    phases=phases,
+                    action_style=action_style,
+                    algorithm=algorithm,
+                    output_model=Path(args.model_path))
         case "evaluate":
-            evaluate(phases=phases, input=Path(args.model_path))
+            evaluate(
+                    phases=phases,
+                    start_phase=args.start_phase,
+                    input_model=Path(args.model_path))
         case "play":
             if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
                 raise RuntimeError("Invalid start phase specified.")
