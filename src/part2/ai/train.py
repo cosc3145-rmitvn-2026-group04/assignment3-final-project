@@ -96,13 +96,6 @@ def train(
     env_hyperparams: dict[str, Any]
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
         env_hyperparams = json.load(file)
-    if verbose > 0:
-        rprint("[blue]-> Loaded environment hyperparams from '%s'.[/blue]" % (
-            str(ENV_HYPERPARAMS_CONFIG_FILE)
-        ))
-    if verbose > 1:
-        print(json.dumps(env_hyperparams, indent=2))
-
     vec_env: SubprocVecEnv = SubprocVecEnv([
         make_environment_fn(action_style, phases, seed + env_index)
         for env_index in range(n_threads)
@@ -112,7 +105,12 @@ def train(
             n_episodes=env_hyperparams["phase_progress_win_rate_episode_memory"],
             verbose=verbose
     )
-    if verbose > 0:
+    if verbose > 1:
+        rprint("[blue]-> Environment loaded (config: '%s'):[/blue]" % (
+            str(ENV_HYPERPARAMS_CONFIG_FILE)
+        ))
+        print(json.dumps(env_hyperparams, indent=2))
+    elif verbose > 0:
         rprint("[blue]-> Environment loaded.[/blue]")
     # ==========================
 
@@ -120,12 +118,6 @@ def train(
     model_hyperparams: dict[str, Any]
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
         model_hyperparams = json.load(file)
-    if verbose > 0:
-        rprint("[blue]-> Loaded model hyperparams for %s from '%s'.[/blue]" % (
-            algorithm.name,
-            str(MODEL_HYPERPARAMS_CONFIG_FILE)
-        ))
-
     model: BaseAlgorithm
     match algorithm:
         case LearningAlgorithmType.PPO:
@@ -135,9 +127,10 @@ def train(
                     **model_hyperparams["PPO"],
                     verbose=verbose)
             if verbose > 1:
+                rprint("[blue]-> PPO model initialized (config: '%s'):.[/blue]" % (str(MODEL_HYPERPARAMS_CONFIG_FILE)))
                 print(json.dumps(model_hyperparams["PPO"], indent=2))
-            if verbose > 0:
-                rprint("[blue]-> PPO Model initialized.[/blue]")
+            elif verbose > 0:
+                rprint("[blue]-> PPO model initialized.[/blue]")
         case LearningAlgorithmType.DQN:
             model = DQN(
                     policy="MlpPolicy",
@@ -145,8 +138,9 @@ def train(
                     **model_hyperparams["DQN"],
                     verbose=verbose)
             if verbose > 1:
+                rprint("[blue]-> DQN model initialized (config: '%s'):.[/blue]" % (str(MODEL_HYPERPARAMS_CONFIG_FILE)))
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
-            if verbose > 0:
+            elif verbose > 0:
                 rprint("[blue]-> DQN Model initialized.[/blue]")
     # ==========================
 
@@ -154,19 +148,21 @@ def train(
     train_hyperparams: dict[str, Any]
     with open(TRAIN_HYPERPARAMS_CONFIG_FILE, "r") as file:
         train_hyperparams = json.load(file)
-    if verbose > 0:
-        rprint("[blue]-> Loaded training hyperparams from '%s'.[/blue]" % (
+
+    if verbose > 1:
+        rprint("[green]-> Training started on %d thread(s) (config: '%s'):.[/green]" % (
+            n_threads,
             str(TRAIN_HYPERPARAMS_CONFIG_FILE)
         ))
-    if verbose > 1:
         print(json.dumps(train_hyperparams, indent=2))
+    elif verbose > 0:
+        rprint("[green]-> Training started on %d thread(s).[/green]" % (n_threads))
 
-    if verbose > 0:
-        rprint("[green]-> Training started (on %d threads).[/green]" % (n_threads))
     model.learn(
             **train_hyperparams,
             callback=[env_phase_callback],
             progress_bar=(verbose > 1))
+
     if verbose > 0:
         rprint("[green]-> Training finished.[/green]")
     # ==========================
