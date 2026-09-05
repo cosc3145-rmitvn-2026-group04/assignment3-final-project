@@ -5,6 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from typing import Any
 from enum import Enum
 from argparse import ArgumentParser, Namespace
+import psutil
 from stable_baselines3 import PPO, DQN
 import pygame
 from pygame import Surface
@@ -38,8 +39,24 @@ def train(
         phases: dict[str, Any],
         action_style: ActionStyle,
         algorithm: LearningAlgorithmType,
-        output_model: Path | None = None
+        output_model: Path | None = None,
+        n_env: int = 1
 ) -> None:
+    available_cpu_count: int = len(psutil.Process().cpu_affinity())
+    if not 0 < n_env <= available_cpu_count:
+        raise ValueError("`n_env` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
+
+    filename_algorithm: str = algorithm.name.lower()
+    filename_action_style: str = ""
+    match action_style:
+        case ActionStyle.STYLE_A:
+            filename_action_style = "control_style_1"
+        case ActionStyle.STYLE_B:
+            filename_action_style = "control_style_2"
+    _output_model: Path = (
+        output_model if output_model
+        else MODELS_DIR / ("%s.%s.zip" % (filename_algorithm, filename_action_style))
+    )
     raise NotImplementedError  # TODO: Implement this.
 
 def evaluate(
@@ -165,10 +182,16 @@ def main() -> None:
             help="Sets the reinforcement learning algorithm for `train` mode."
     )
     arg_parser.add_argument(
+            "-n", "--n-env",
+            type=int,
+            default=1,
+            help="If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores)."
+    )
+    arg_parser.add_argument(
             "-M", "--model-path",
             type=Path,
             default=None,
-            help="If `mode` is set to `train` or `evaluate`, overrides path to the output/input model."
+            help="If `mode` is set to `train` or `evaluate`, sets path to the output/input model. If `mode` is `train` and this is not specified, a default path in 'models/part2' will be used."
     )
     arg_parser.add_argument(
             "-p", "--start-phase",
@@ -198,15 +221,17 @@ def main() -> None:
                 case _:
                     raise ValueError("Unrecognized RL algorithm.")
             model_path: Path = args.model_path
-            if model_path.suffix != ".zip":
-                raise ValueError("Output model must be a .zip file.")
-            if not model_path.resolve().parent.exists():
-                raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
+            if model_path:
+                if model_path.suffix != ".zip":
+                    raise ValueError("Output model must be a .zip file.")
+                if not model_path.resolve().parent.exists():
+                    raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
             train(
                     phases=phases,
                     action_style=action_style,
                     algorithm=algorithm,
-                    output_model=model_path)
+                    output_model=model_path,
+                    n_env=args.n_env)
         case "evaluate":
             model_path: Path = args.model_path
             if model_path.suffix != ".zip":

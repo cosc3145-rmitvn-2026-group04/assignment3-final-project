@@ -90,7 +90,7 @@ python ./src/part2/main.py
 #### Arguments:
 
 ```txt
-usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-M MODEL_PATH] [-p START_PHASE]
+usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-n N_ENV] [-M MODEL_PATH] [-p START_PHASE]
 
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
@@ -102,8 +102,11 @@ options:
                         Sets the control style for `train` mode.
   -a {PPO,DQN}, --algorithm {PPO,DQN}
                         Sets the reinforcement learning algorithm for `train` mode.
+  -n N_ENV, --n-env N_ENV
+                        If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores).
   -M MODEL_PATH, --model-path MODEL_PATH
-                        If `mode` is set to `train` or `evaluate`, overrides path to the output/input model.
+                        If `mode` is set to `train` or `evaluate`, sets path to the output/input model. If `mode` is `train` and this is not specified, a default path in 'models/part2' will be
+                        used.
   -p START_PHASE, --start-phase START_PHASE
                         If `mode` is set to `play` or `evaluate`, starts the game at the specified phase.
 ```
