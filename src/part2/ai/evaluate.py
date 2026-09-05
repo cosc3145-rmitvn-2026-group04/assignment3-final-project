@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Any
+import cloudpickle
 from rich import print as rprint
-from stable_baselines3 import PPO, DQN
-from stable_baselines3.common.base_class import BaseAlgorithm
 import pygame
 from pygame import Surface
 from pygame.time import Clock
@@ -38,9 +37,12 @@ def evaluate(
     info: dict[str, Any]
     observation, info = env.reset()
 
-
-    model: PPO = PPO.load(input_model)  # TODO: Implement auto detect PPO/DQN on model load.
-    action_type: ActionStyle = ActionStyle.STYLE_A  # TODO: Implement auto detect on model load.
+    model_pkl: dict[str, Any]
+    with open(input_model, "rb") as file:
+        model_pkl = cloudpickle.load(file)
+    model: Any = model_pkl["model"]
+    model_algorithm_name: str = model_pkl["metadata"]["algorithm"]
+    model_control_style_name: str = model_pkl["metadata"]["control_style"]
     action: Any
     states: Any
 
@@ -101,7 +103,13 @@ def evaluate(
             total_reward += float(reward)
 
             main_hud.update(delta, events)
-            eval_aux_hud.update(delta, events, hud_show_help, action_type, total_reward)
+            eval_aux_hud.update(
+                    delta,
+                    events,
+                    hud_show_help,
+                    model_algorithm_name,
+                    model_control_style_name,
+                    total_reward)
 
             if (
                 terminated or truncated

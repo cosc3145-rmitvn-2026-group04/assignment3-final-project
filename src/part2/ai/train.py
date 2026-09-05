@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 from enum import Enum
 import psutil
+import cloudpickle
 import json
 from rich import print as rprint
 from stable_baselines3 import PPO, DQN
@@ -81,16 +82,19 @@ def train(
         if not 0 < n_threads <= available_cpu_count:
             raise ValueError("`n_threads` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
 
-    filename_algorithm: str = algorithm.name.lower()
-    filename_action_style: str = ""
+    algorithm_name_str: str = algorithm.name
+    action_style_name_str: str = ""
+    action_style_filename_str: str = ""
     match action_style:
         case ActionStyle.STYLE_A:
-            filename_action_style = "control_style_1"
+            action_style_name_str = "Control Style 1"
+            action_style_filename_str = "control_style_1"
         case ActionStyle.STYLE_B:
-            filename_action_style = "control_style_2"
+            action_style_name_str = "Control Style 2"
+            action_style_filename_str = "control_style_2"
     _output_model: Path = (
         output_model if output_model
-        else MODELS_DIR / ("%s.%s.zip" % (filename_algorithm, filename_action_style))
+        else MODELS_DIR / ("%s.%s.pkl" % (algorithm_name_str.lower(), action_style_filename_str))
     )
 
     # === Environment Config ===
@@ -173,7 +177,17 @@ def train(
     # ==========================
 
     # ====== Model Export ======
-    model.save(_output_model)
+    model.env = None
+    model.n_envs = 0
+    with open(_output_model, "wb") as file:
+        model_pkl: dict[str, Any] = {
+            "model": model,
+            "metadata": {
+                "algorithm": algorithm_name_str,
+                "control_style": action_style_name_str,
+            },
+        }
+        cloudpickle.dump(model_pkl, file)
     if verbose > 0:
         rprint("[magenta]-> Saved model to '%s'.[/magenta]" % (str(_output_model)))
     # ==========================

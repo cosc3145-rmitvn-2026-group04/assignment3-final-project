@@ -29,7 +29,8 @@ class EvaluationAuxiliaryHUD(UserInterface):
             delta: float,
             events: list[Event],
             show_instructions: bool,
-            control_style: ActionStyle | None,
+            model_algorithm_name: str,
+            model_control_style_name: str,
             cumulative_reward: float,
             *args, **kwargs
     ) -> None:
@@ -57,18 +58,15 @@ class EvaluationAuxiliaryHUD(UserInterface):
                 int(self.fonts["small"].get_linesize() * 1.15),
                 align=TextAlignment.RIGHT)
 
-        control_style_num: int = -1
-        match control_style:
-            case ActionStyle.STYLE_A:
-                control_style_num = 1
-            case ActionStyle.STYLE_B:
-                control_style_num = 2
-        eval_info_control_line_text: str = "\nControl Style %d\n" % (control_style_num)
+        eval_info_model_metadata_text: str = "%s\nModel: %s" % (
+                model_control_style_name,
+                model_algorithm_name
+        )
         blit_lines(
                 self.surface,
-                Vector2(WINDOW_WIDTH - 10, 10),
-                eval_info_control_line_text,
+                Vector2(WINDOW_WIDTH - 10, 28),
+                eval_info_model_metadata_text,
                 self.fonts["xsmall"],
                 COLOR_EVAL_AUX_HUD_INFO_FOREGROUND_DIM,
-                int(self.fonts["small"].get_linesize() * 1.1),
+                int(self.fonts["xsmall"].get_linesize()),
                 align=TextAlignment.RIGHT)

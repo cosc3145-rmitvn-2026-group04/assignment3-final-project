@@ -100,7 +100,7 @@ def main() -> None:
             model_path: Path = args.model_path
             if model_path:
                 if model_path.suffix != ".zip":
-                    raise ValueError("Output model must be a .zip file.")
+                    raise ValueError("Output model must be a .pkl file.")
                 if not model_path.resolve().parent.exists():
                     raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
             train(
@@ -116,8 +116,8 @@ def main() -> None:
             model_path: Path = args.model_path
             if not model_path:
                 raise RuntimeError("No input model provided for 'evaluate' mode.")
-            if model_path.suffix != ".zip":
-                raise ValueError("Input model must be a .zip file.")
+            if model_path.suffix != ".pkl":
+                raise ValueError("Input model must be a .pkl file.")
             if not model_path.exists():
                 raise FileNotFoundError("Model not found at '%s'" % (model_path))
             evaluate(
