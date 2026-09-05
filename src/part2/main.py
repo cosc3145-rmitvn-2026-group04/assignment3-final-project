@@ -98,7 +98,7 @@ def main() -> None:
                     phases=phases,
                     algorithm=algorithm,
                     seed=args.seed,
-                    threads=args.n_threads,
+                    n_threads=args.n_threads,
                     output_model=model_path,
                     verbose=args.verbose)
         case "evaluate":

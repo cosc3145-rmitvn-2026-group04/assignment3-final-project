@@ -118,5 +118,6 @@ For more information, please use the `-h`, `-help`, or `--help` flag.
 #### Configuration files:
 
 - `src/part2/game_phases.json`: Contains the layout and data for all game phases of this module.
+- `src/part2/rl_env_hparams.json`: Contains the hyperparameters for the RL game environment of this module.
 - `src/part2/rl_model_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
 - `src/part2/rl_train_hparams.json`: Contains the hyperparameters for the RL training procedure of this module.

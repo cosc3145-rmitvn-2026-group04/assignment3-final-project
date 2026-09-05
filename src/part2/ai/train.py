@@ -13,6 +13,7 @@ from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.config import MODELS_DIR
 
+ENV_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_env_hparams.json"
 MODEL_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_model_hparams.json"
 TRAIN_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_train_hparams.json"
 
@@ -44,20 +45,20 @@ class GameEnvironmentPhaseCallback(BaseCallback):
             self.episode_results = self.episode_results[-self.n_episodes:]
             win_rate: float = sum(self.episode_results) / len(self.episode_results)
             if win_rate >= self.win_rate_threshold:
-                current_phase_index: int = self.training_env.env_method("get_attr", "current_phase_index")[0]
+                current_phase_index: int = self.training_env.get_attr("current_phase_index")[0]
                 next_phase_index: int = current_phase_index + 1
-                phases_count: int = len(self.training_env.env_method("get_attr", "phases")[0]["phases"])
+                phases_count: int = len(self.training_env.get_attr("phases")[0]["phases"])
                 if next_phase_index < phases_count - 1:
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
-                    if self.verbose > 0:
+                    if self.verbose > 2:
                         rprint("[blue]-> Win rate %.2f (last %i eps) achieved for Phase index %i. Progressed to Phase index %i.[/blue]" % (
                             self.win_rate_threshold,
                             self.n_episodes,
                             current_phase_index,
                             next_phase_index,
                         ))
-                elif self.verbose > 0:
+                elif self.verbose > 2:
                     rprint("[blue]-> Win rate %.2f achieved for all %i phases.[/blue]" % (self.win_rate_threshold, phases_count))
 
         return super()._on_step()
@@ -68,15 +69,15 @@ def train(
         phases: dict[str, Any],
         algorithm: LearningAlgorithmType,
         seed: int = 0,
-        threads: int = 1,
+        n_threads: int = 1,
         output_model: Path | None = None,
         verbose: int = 0
 ) -> None:
     rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
 
     available_cpu_count: int = len(psutil.Process().cpu_affinity())
-    if not 0 < threads <= available_cpu_count:
-        raise ValueError("`n_env` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
+    if not 0 < n_threads <= available_cpu_count:
+        raise ValueError("`n_threads` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
 
     filename_algorithm: str = algorithm.name.lower()
     filename_action_style: str = ""
@@ -92,13 +93,23 @@ def train(
 
     # === Environment Config ===
     # Include support for multi-process parallel training.
+    env_hyperparams: dict[str, Any]
+    with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
+        env_hyperparams = json.load(file)
+    if verbose > 0:
+        rprint("[blue]-> Loaded environment hyperparams from '%s'.[/blue]" % (
+            str(ENV_HYPERPARAMS_CONFIG_FILE)
+        ))
+    if verbose > 1:
+        print(json.dumps(env_hyperparams, indent=2))
+
     vec_env: SubprocVecEnv = SubprocVecEnv([
         make_environment_fn(action_style, phases, seed + env_index)
-        for env_index in range(threads)
+        for env_index in range(n_threads)
     ])
     env_phase_callback: GameEnvironmentPhaseCallback = GameEnvironmentPhaseCallback(
-            win_rate_threshold=0.85,
-            n_episodes=50,
+            win_rate_threshold=env_hyperparams["phase_progress_win_rate_threshold"],
+            n_episodes=env_hyperparams["phase_progress_win_rate_episode_memory"],
             verbose=verbose
     )
     if verbose > 0:
@@ -125,6 +136,8 @@ def train(
                     verbose=verbose)
             if verbose > 1:
                 print(json.dumps(model_hyperparams["PPO"], indent=2))
+            if verbose > 0:
+                rprint("[blue]-> PPO Model initialized.[/blue]")
         case LearningAlgorithmType.DQN:
             model = DQN(
                     policy="MlpPolicy",
@@ -133,6 +146,8 @@ def train(
                     verbose=verbose)
             if verbose > 1:
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
+            if verbose > 0:
+                rprint("[blue]-> DQN Model initialized.[/blue]")
     # ==========================
 
     # ======== Training ========
@@ -147,7 +162,7 @@ def train(
         print(json.dumps(train_hyperparams, indent=2))
 
     if verbose > 0:
-        rprint("[green]-> Training started.[/green]")
+        rprint("[green]-> Training started (on %d threads).[/green]" % (n_threads))
     model.learn(
             **train_hyperparams,
             callback=[env_phase_callback],
