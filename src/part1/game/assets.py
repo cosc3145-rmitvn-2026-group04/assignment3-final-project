@@ -5,10 +5,9 @@ import pygame
 from .config import TILE_SIZE
 
 
-ASSET_ROOT = (
-    Path(__file__).resolve().parents[1]
-    / "assets"
-    / "Farm RPG FREE 16x16 - Tiny Asset Pack"
+PART1_ASSET_ROOT = Path(__file__).resolve().parents[1] / "assets"
+FARM_ASSET_ROOT = (
+    PART1_ASSET_ROOT / "Farm RPG FREE 16x16 - Tiny Asset Pack"
 )
 
 
@@ -49,19 +48,21 @@ class AssetManager:
         )
 
         self.chest_closed = self._frame(
-            "Objects/chest.png",
-            column=0,
+            "RPG Chests.png",
+            column=5,
             row=0,
-            frame_size=16,
+            frame_size=32,
             output_size=TILE_SIZE // 2,
+            asset_root=PART1_ASSET_ROOT,
         )
 
         self.chest_open = self._frame(
-            "Objects/chest.png",
-            column=0,
-            row=1,
-            frame_size=16,
+            "RPG Chests.png",
+            column=5,
+            row=3,
+            frame_size=32,
             output_size=TILE_SIZE // 2,
+            asset_root=PART1_ASSET_ROOT,
         )
 
         self.monster = self._frame(
@@ -73,17 +74,18 @@ class AssetManager:
         )
         self.key = self._create_key()
 
-    def _load_sheet(self, relative_path):
-        if relative_path not in self._sheets:
-            path = ASSET_ROOT / relative_path
+    def _load_sheet(self, relative_path, asset_root=FARM_ASSET_ROOT):
+        cache_key = (asset_root, relative_path)
+        if cache_key not in self._sheets:
+            path = asset_root / relative_path
             if not path.exists():
                 raise FileNotFoundError(f"Missing Pygame asset: {path}")
 
-            self._sheets[relative_path] = pygame.image.load(
+            self._sheets[cache_key] = pygame.image.load(
                 str(path)
             ).convert_alpha()
 
-        return self._sheets[relative_path]
+        return self._sheets[cache_key]
 
     def _frame(
         self,
@@ -92,8 +94,9 @@ class AssetManager:
         row,
         frame_size,
         output_size,
+        asset_root=FARM_ASSET_ROOT,
     ):
-        sheet = self._load_sheet(relative_path)
+        sheet = self._load_sheet(relative_path, asset_root)
 
         source_rectangle = pygame.Rect(
             column * frame_size,
