@@ -106,7 +106,7 @@ class GameEnvironment(Env):
         previous_enemy_count: int = len(self.game.enemy_pool.objects())
         previous_agent_health: int = self.game.player.health
 
-        _action: Action = self._actions[action]
+        _action: Action = self._actions[action.item()]
         self.agent.controller.update(delta, [], _action)
         self.game.update(delta, events=[])
 
