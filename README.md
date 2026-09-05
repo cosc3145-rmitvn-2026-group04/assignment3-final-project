@@ -89,7 +89,7 @@ python ./src/part2/main.py
 #### Arguments:
 
 ```txt
-usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_ENV] [-M MODEL_PATH] [-p START_PHASE] [-v VERBOSE]
+usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_THREADS] [-M MODEL_PATH] [-p START_PHASE] [-v VERBOSE]
 
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
@@ -102,7 +102,7 @@ options:
   -a {PPO,DQN}, --algorithm {PPO,DQN}
                         Sets the reinforcement learning algorithm for `train` mode. Default: PPO.
   -s SEED, --seed SEED  If `mode` is set to `train`, sets RNG seed for the training environment. Default: 0.
-  -n N_ENV, --n-env N_ENV
+  -n N_THREADS, --n-threads N_THREADS
                         If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1.
   -M MODEL_PATH, --model-path MODEL_PATH
                         If `mode` is set to `train` or `evaluate`, sets path to the output/input model. If `mode` is `train` and this is not specified, a default path in 'models/part2' will be

@@ -43,7 +43,7 @@ def main() -> None:
             help="If `mode` is set to `train`, sets RNG seed for the training environment. Default: 0."
     )
     arg_parser.add_argument(
-            "-n", "--n-env",
+            "-n", "--n-threads",
             type=int,
             default=1,
             help="If `mode` is set to `train`, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1."
@@ -98,7 +98,7 @@ def main() -> None:
                     phases=phases,
                     algorithm=algorithm,
                     seed=args.seed,
-                    n_env=args.n_env,
+                    threads=args.n_threads,
                     output_model=model_path,
                     verbose=args.verbose)
         case "evaluate":
