@@ -15,7 +15,7 @@ from part2.config import (
 
 class GameStatus(Enum):
     GAME_LOST = -1
-    GAME_ONGOING = 0
+    GAME_IN_PROGRESS = 0
     GAME_WON = 1
 
 
@@ -29,7 +29,7 @@ class Game:
         screen_center: Vector2 = Vector2(WINDOW_WIDTH // 2, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2)
 
         self.game_over: bool = False
-        self.status: GameStatus = GameStatus.GAME_ONGOING
+        self.status: GameStatus = GameStatus.GAME_IN_PROGRESS
 
         self.player.health = PLAYER_HEALTH
         self.player.rotation = 0.0
