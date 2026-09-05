@@ -43,8 +43,8 @@ def play(phases: dict[str, Any], start_phase: int = 0) -> None:
         game: Game = Game(player, phases["phases"][phase_index])
 
         main_hud: MainHUD = MainHUD(fonts, game)
-        show_help: bool = False
         help_hud: HelpHUD = HelpHUD(fonts)
+        show_help: bool = False
 
         debug_render: bool = False
         running: bool = True
