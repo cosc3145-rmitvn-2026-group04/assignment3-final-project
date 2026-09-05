@@ -68,14 +68,14 @@ def train(
         phases: dict[str, Any],
         algorithm: LearningAlgorithmType,
         seed: int = 0,
-        n_env: int = 1,
+        threads: int = 1,
         output_model: Path | None = None,
         verbose: int = 0
 ) -> None:
     rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
 
     available_cpu_count: int = len(psutil.Process().cpu_affinity())
-    if not 0 < n_env <= available_cpu_count:
+    if not 0 < threads <= available_cpu_count:
         raise ValueError("`n_env` exceeds of number of available CPU cores (%d)." % (available_cpu_count))
 
     filename_algorithm: str = algorithm.name.lower()
@@ -94,7 +94,7 @@ def train(
     # Include support for multi-process parallel training.
     vec_env: SubprocVecEnv = SubprocVecEnv([
         make_environment_fn(action_style, phases, seed + env_index)
-        for env_index in range(n_env)
+        for env_index in range(threads)
     ])
     env_phase_callback: GameEnvironmentPhaseCallback = GameEnvironmentPhaseCallback(
             win_rate_threshold=0.85,
