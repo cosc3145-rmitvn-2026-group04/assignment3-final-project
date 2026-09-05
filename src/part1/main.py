@@ -13,7 +13,7 @@ from src.part1.game.config import (
     MAX_STEPS,
 )
 from src.part1.game.gridworld import GridWorld
-from src.part1.game.levels import LEVEL_0, LEVEL_1
+from src.part1.game.levels import LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3
 from src.part1.ai.q_learning import QLearningAgent
 from src.part1.ai.SARSA import SARSAAgent
 from src.part1.runner import run_interactive, run_training
@@ -21,6 +21,8 @@ from src.part1.runner import run_interactive, run_training
 LEVEL_CONFIG = {
     0: {"layout": LEVEL_0, "agent_cls": QLearningAgent, "algo_name": "q_learning"},
     1: {"layout": LEVEL_1, "agent_cls": SARSAAgent, "algo_name": "sarsa"},
+    2: {"layout": LEVEL_2, "agent_cls": QLearningAgent, "algo_name": "q_learning" if QLearningAgent == QLearningAgent else "sarsa"},
+    3: {"layout": LEVEL_3, "agent_cls": SARSAAgent, "algo_name": "sarsa" if SARSAAgent == SARSAAgent else "sarsa"},
 }
 
 KEY_TO_ACTION = {
@@ -52,6 +54,8 @@ def parse_arguments():
         choices=list(LEVEL_CONFIG.keys()),
         help="select 0 for q learning, 1 for SARSA",
     )
+    parser.add_argument("--algo", type=str, choices=["q_learning", "sarsa"], default=None, 
+                        help="override default algorithm (q_learning or sarsa)")
     return parser.parse_args()
 
 
