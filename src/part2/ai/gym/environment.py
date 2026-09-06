@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any, SupportsFloat
 from collections.abc import Callable
+from statistics import mean
 import numpy as np
 from gymnasium import Env, spaces
 from pygame.math import Vector2
@@ -94,8 +95,6 @@ class GameEnvironment(Env):
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
         reward: float = self.hparams["reward_step"]
 
-        previous_agent_position: Vector2 = self.game.player.position
-        previous_agent_rotation: float = self.game.player.rotation
         previous_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
         previous_agent_health: int = self.game.player.health
         previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
@@ -105,17 +104,21 @@ class GameEnvironment(Env):
         self.agent.controller.update(delta, [], _action)
         self.game.update(delta, events=[])
 
-        current_agent_position: Vector2 = self.game.player.position
-        if current_agent_position.distance_squared_to(previous_agent_position) > 0:
+        if self.agent.velocity.length_squared() > 0:
             reward += self.hparams["reward_agent_movement"]
 
-        current_agent_rotation: float = self.game.player.rotation
-        if current_agent_rotation - previous_agent_rotation > 0:
+        if self.agent.angular_speed > 0:
             reward += self.hparams["reward_agent_rotation"]
 
         current_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
         agent_shot_count: int = previous_agent_bullet_count - current_agent_bullet_count
         reward += agent_shot_count * self.hparams["reward_agent_shoot"]
+
+        observed_enemies: list[Enemy] = self._get_observed_enemies()
+        mean_distance_to_observed_enemies: float = 0.0 if len(observed_enemies) == 0 else mean([
+                self.agent.position.distance_to(enemy.position)
+                for enemy in self._get_observed_enemies()])
+        reward += mean_distance_to_observed_enemies * self.hparams["reward_agent_enemy_distance"]
 
         current_agent_health: int = self.game.player.health
         agent_health_loss: int = previous_agent_health - current_agent_health
@@ -163,15 +166,14 @@ class GameEnvironment(Env):
         ]
 
         enemy_observation: list = []
-        enemy_spawers: list[EnemySpawner] = self.game.enemy_spawner_pool.objects()
-        enemy_spawers.sort(key=lambda enemy_spawner: self.agent.position.distance_squared_to(enemy_spawner.position))
+        observed_enemy_spawers: list[EnemySpawner] = self._get_observed_enemy_spawners()
         enemy_spawner_index: int
         for enemy_spawner_index in range(self.hparams["max_enemy_spawner_obs"]):
-            if enemy_spawner_index >= len(enemy_spawers):
+            if enemy_spawner_index >= len(observed_enemy_spawers):
                 enemy_observation.extend([0.0, 0.0, 0.0, -1.0])
                 continue
 
-            enemy_spawner: EnemySpawner = enemy_spawers[enemy_spawner_index]
+            enemy_spawner: EnemySpawner = observed_enemy_spawers[enemy_spawner_index]
             enemy_spawner_relative_position: Vector2 = enemy_spawner.position - self.agent.position
             enemy_observation.extend([
                 enemy_spawner_relative_position.x,
@@ -179,15 +181,14 @@ class GameEnvironment(Env):
                 enemy_spawner.health / enemy_spawner.max_health * 2.0 - 1.0,
                 1.0
             ])
-        enemies: list[Enemy] = self.game.enemy_pool.objects()
-        enemies.sort(key=lambda enemy: self.agent.position.distance_squared_to(enemy.position))
+        observed_enemies: list[Enemy] = self._get_observed_enemies()
         enemy_index: int
         for enemy_index in range(self.hparams["max_enemy_obs"]):
-            if enemy_index >= len(enemies):
+            if enemy_index >= len(observed_enemies):
                 enemy_observation.extend([0.0, 0.0, -1.0])
                 continue
 
-            enemy: Enemy = enemies[enemy_index]
+            enemy: Enemy = observed_enemies[enemy_index]
             enemy_relative_position: Vector2 = enemy.position - self.agent.position
             enemy_observation.extend([
                 enemy_relative_position.x,
@@ -205,3 +206,17 @@ class GameEnvironment(Env):
             "enemy_count": len(self.game.enemy_pool.objects()),
             "game_status": self.game.status,
         }
+
+    def _get_observed_enemy_spawners(self) -> list[EnemySpawner]:
+        r: list[EnemySpawner] = self.game.enemy_spawner_pool.objects()
+        r.sort(key=lambda enemy_spawner: self.agent.position.distance_squared_to(enemy_spawner.position))
+        if len(r) > self.hparams["max_enemy_spawner_obs"]:
+            r = r[:self.hparams["max_enemy_spawner_obs"]]
+        return r
+
+    def _get_observed_enemies(self) -> list[Enemy]:
+        r: list[Enemy] = self.game.enemy_pool.objects()
+        r.sort(key=lambda enemy: self.agent.position.distance_squared_to(enemy.position))
+        if len(r) > self.hparams["max_enemy_obs"]:
+            r = r[:self.hparams["max_enemy_obs"]]
+        return r
