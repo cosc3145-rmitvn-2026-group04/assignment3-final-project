@@ -7,6 +7,7 @@ import json
 import psutil
 import cloudpickle
 from rich import print as rprint
+from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import configure, Logger, KVWriter
 from stable_baselines3 import PPO, DQN
@@ -140,6 +141,14 @@ def train(
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_TRAIN_TEMP_DIR.mkdir(parents=True, exist_ok=True)
     TRAIN_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    if verbose > 2:
+        print("Default MODEL_DIR='%s'" % (str(MODELS_DIR)))
+        print("Default MODELS_TRAIN_TEMP_DIR='%s'" % (str(MODELS_TRAIN_TEMP_DIR)))
+        print("Default TRAIN_LOG_DIR='%s'" % (str(TRAIN_LOG_DIR)))
+
+    set_random_seed(seed=seed, using_cuda=device=="cuda")
+    if verbose > 0:
+        rprint("[blue]-> RNG randomized.[/blue]")
 
     if device in ["cpu", "meta", "xla", "xpu", "mkldnn"]:
         available_cpu_count: int = len(psutil.Process().cpu_affinity())
