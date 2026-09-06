@@ -121,3 +121,9 @@ For more information, please use the `-h`, `-help`, or `--help` flag.
 - `src/part2/rl_env_hparams.json`: Contains the hyperparameters for the RL game environment of this module, including agent sensor capability and reward function tunings.
 - `src/part2/rl_model_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
 - `src/part2/rl_train_hparams.json`: Contains the hyperparameters for the RL training procedure of this module.
+
+
+### Outputs:
+
+- `models/part2`: Default trained model export directory.
+- `logs/part2`: Training logs directory (Tensorboard and CSV). Use `tensorboard --logdir /logs/part2` to view.

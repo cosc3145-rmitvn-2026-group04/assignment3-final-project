@@ -12,10 +12,15 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.logger import configure, Logger
 from part2.ai.gym.environment import make_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
-from part2.config import MODELS_DIR, MODELS_TRAIN_TEMP_DIR, FPS
+from part2.config import (
+        MODELS_DIR,
+        MODELS_TRAIN_TEMP_DIR,
+        TRAIN_LOG_DIR,
+        FPS)
 
 ENV_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_env_hparams.json"
 MODEL_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_model_hparams.json"
@@ -120,8 +125,10 @@ def train(
 ) -> None:
     rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)  # Verify models directory.
-    MODELS_TRAIN_TEMP_DIR.mkdir(parents=True, exist_ok=True)  # Verify models directory.
+    # Verify directories.
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    MODELS_TRAIN_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    TRAIN_LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     if device in ["cpu", "meta", "xla", "xpu", "mkldnn"]:
         available_cpu_count: int = len(psutil.Process().cpu_affinity())
@@ -167,6 +174,8 @@ def train(
     # ==========================
 
     # ====== Model Config ======
+    logger: Logger = configure(str(TRAIN_LOG_DIR), ["stdout", "csv", "tensorboard"])
+
     model_hyperparams: dict[str, Any]
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
         model_hyperparams = json.load(file)
@@ -198,6 +207,7 @@ def train(
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
             elif verbose > 0:
                 rprint("[blue]-> DQN Model initialized.[/blue]")
+    model.set_logger(logger)
     # ==========================
 
     # ======== Training ========
