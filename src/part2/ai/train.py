@@ -15,7 +15,7 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from part2.ai.gym.environment import make_environment_fn, GameEnvironment
+from part2.ai.gym.environment import make_game_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.config import (
@@ -208,7 +208,11 @@ def train(
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
         env_hyperparams = json.load(file)
     vec_env: SubprocVecEnv = SubprocVecEnv([
-        make_environment_fn(action_style, phases, seed + env_index)
+        make_game_environment_fn(
+                action_style=action_style,
+                phases=phases,
+                seed=seed + env_index,
+                max_steps=env_hyperparams["max_steps_episode"])
         for env_index in range(n_threads)
     ])
     env_phase_callback: GameEnvironmentPhaseCallback = GameEnvironmentPhaseCallback(
@@ -290,7 +294,10 @@ def train(
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
             eval_model=model,
             temp_file_path=best_model_temp_file_path,
-            eval_env=Monitor(GameEnvironment(action_style=action_style, phases=phases)),
+            eval_env=Monitor(GameEnvironment(
+                    action_style=action_style,
+                    phases=phases,
+                    max_steps=env_hyperparams["max_steps_episode"])),
             eval_freq=train_hyperparams["eval_freq"],
             n_eval_episodes=train_hyperparams["n_eval_episodes"],
             verbose=verbose)

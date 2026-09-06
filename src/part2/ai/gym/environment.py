@@ -13,10 +13,11 @@ from part2.game.game import Game, GameStatus
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
 
-def make_environment_fn(
+def make_game_environment_fn(
         action_style: ActionStyle,
         phases: dict[str, Any],
-        seed: int | None = None
+        seed: int | None = None,
+        max_steps: int = 0,
 ) -> Callable:
     """
     Generates wrapper a function returning a GameEnvironment for use in
@@ -24,7 +25,7 @@ def make_environment_fn(
     stable_baselines3.common.vec_env.SubprocVecEnv
     """
     def _init() -> GameEnvironment:
-        environment: GameEnvironment = GameEnvironment(action_style, phases)
+        environment: GameEnvironment = GameEnvironment(action_style, phases, max_steps)
         environment.reset(seed=seed)
         return environment
     return _init
@@ -35,11 +36,14 @@ class GameEnvironment(Env):
 
     def __init__(self,
             action_style: ActionStyle,
-            phases: dict[str, Any]
+            phases: dict[str, Any],
+            max_steps: int = 0
     ) -> None:
         super().__init__()
         self.render_mode = None
         self.hparams: dict[str, Any] = get_hyperparameters()
+        self.current_step: int = 0
+        self.max_steps: int = max_steps
         self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
         self.phases: dict[str, Any] = phases
@@ -88,10 +92,13 @@ class GameEnvironment(Env):
             options: dict[str, Any] | None = None
     ) -> tuple[Any, dict[str, Any]]:
         super().reset(seed=seed, options=options)
+        self.current_step = 0
         self.game.reset()
         return self._get_observation(), self._get_info()
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        self.current_step += 1
+
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
         reward: float = self.hparams["reward_step"]
 
@@ -160,7 +167,6 @@ class GameEnvironment(Env):
         )
 
         terminated: bool = False
-        truncated: bool = False
         if self.game.game_over:
             terminated = True
             match self.game.status:
@@ -168,6 +174,11 @@ class GameEnvironment(Env):
                     reward += self.hparams["reward_phase_win"]
                 case GameStatus.GAME_LOST:
                     reward += self.hparams["reward_phase_loss"]
+
+        truncated: bool = False
+        if self.max_steps > 0 and self.current_step >= self.max_steps:
+            truncated = True
+            reward += self.hparams["reward_episode_truncated"]
 
         return self._get_observation(), reward, terminated, truncated, self._get_info()
 
