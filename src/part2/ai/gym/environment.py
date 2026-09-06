@@ -95,42 +95,69 @@ class GameEnvironment(Env):
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
         reward: float = self.hparams["reward_step"]
 
-        previous_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
+        previous_agent_position: Vector2 = self.agent.position
+        previous_agent_rotation: float = self.agent.rotation
         previous_agent_health: int = self.game.player.health
         previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
+        previous_total_enemy_spawners_health: int = sum([
+                enemy_spawner.health
+                for enemy_spawner in self.game.enemy_spawner_pool.objects()])
         previous_enemy_count: int = len(self.game.enemy_pool.objects())
 
         _action: Action = self._actions[action.item()]
         self.agent.controller.update(delta, [], _action)
         self.game.update(delta, events=[])
 
-        if self.agent.velocity.length_squared() > 0:
-            reward += self.hparams["reward_agent_movement"]
+        current_agent_position: Vector2 = self.agent.position
+        reward += (
+            current_agent_position.distance_to(previous_agent_position)
+            * self.hparams["reward_agent_movement"]
+        )
 
-        if self.agent.angular_speed > 0:
-            reward += self.hparams["reward_agent_rotation"]
+        current_agent_rotation: float = self.agent.rotation
+        reward += (
+            abs(current_agent_rotation - previous_agent_rotation)
+            * self.hparams["reward_agent_rotation"]
+        )
 
-        current_agent_bullet_count: int = len(self.game.player_bullet_pool.objects())
-        agent_shot_count: int = previous_agent_bullet_count - current_agent_bullet_count
-        reward += agent_shot_count * self.hparams["reward_agent_shoot"]
+        if _action == Action.SHOOT:
+            reward += self.hparams["reward_agent_shoot"]
 
         observed_enemies: list[Enemy] = self._get_observed_enemies()
         mean_distance_to_observed_enemies: float = 0.0 if len(observed_enemies) == 0 else mean([
                 self.agent.position.distance_to(enemy.position)
                 for enemy in self._get_observed_enemies()])
-        reward += mean_distance_to_observed_enemies * self.hparams["reward_agent_enemy_distance"]
+        if mean_distance_to_observed_enemies > 0.0:
+            reward -= (
+                self.hparams["reward_agent_enemy_max_obs_distance"] / mean_distance_to_observed_enemies
+                * self.hparams["reward_agent_enemy_distance"]
+            )
 
         current_agent_health: int = self.game.player.health
-        agent_health_loss: int = previous_agent_health - current_agent_health
-        reward += agent_health_loss * self.hparams["reward_agent_hurt"]
+        reward += (
+            max(0, previous_agent_health - current_agent_health)
+            * self.hparams["reward_agent_hurt"]
+        )
+
+        current_total_enemy_spawners_health: int = sum([
+                enemy_spawner.health
+                for enemy_spawner in self.game.enemy_spawner_pool.objects()])
+        reward += (
+            max(0, previous_total_enemy_spawners_health - current_total_enemy_spawners_health)
+            * self.hparams["reward_enemy_spawner_hit"]
+        )
 
         current_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
-        enemy_spawner_kill_count: int = previous_enemy_spawner_count - current_enemy_spawner_count
-        reward += enemy_spawner_kill_count * self.hparams["reward_enemy_spawner_kill"]
+        reward += (
+            max(0, previous_enemy_spawner_count - current_enemy_spawner_count)
+            * self.hparams["reward_enemy_spawner_kill"]
+        )
 
         current_enemy_count: int = len(self.game.enemy_pool.objects())
-        enemy_kill_count: int = previous_enemy_count - current_enemy_count
-        reward += enemy_kill_count * self.hparams["reward_enemy_kill"]
+        reward += (
+            max(0, previous_enemy_count - current_enemy_count)
+            * self.hparams["reward_enemy_kill"]
+        )
 
         terminated: bool = False
         truncated: bool = False
