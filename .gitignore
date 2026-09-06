@@ -838,5 +838,6 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,jetbrains+all,visualstudiocode,visualstudio,vim,emacs,venv,dotenv,windows,linux,macos
 
 
-# Project ignores
+# Project output ignores
 models/
+logs/

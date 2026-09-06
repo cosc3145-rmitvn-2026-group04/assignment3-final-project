@@ -5,8 +5,8 @@ PLAYER_ANGULAR_SPEED: float = 180.0  # deg/s
 PLAYER_SHOOTING_COOLDOWN: float = 0.1  # seconds
 PLAYER_BULLET_SPEED: float = 800.0  # px/s
 
-ENEMY_SPAWNER_HEALTH: int = 45  # HP
 ENEMY_SEPARATION_ACTIVATE_RADIUS: float = 32.0  # px
 ENEMY_SEPARATION_FORCE_WEIGHT: float = 10.0
+ENEMY_SPEED: float = 80.0  # px/s
 
-ENEMY_SPEED = 80  # px/s
+PHASE_TRANSITION_DELAY: float = 3.0  # seconds
