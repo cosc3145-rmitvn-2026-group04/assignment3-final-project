@@ -6,13 +6,13 @@ import json
 import psutil
 import cloudpickle
 from rich import print as rprint
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import configure, Logger
+from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.logger import configure, Logger
 from part2.ai.gym.environment import make_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
@@ -243,7 +243,11 @@ def train(
 
     model.learn(
             total_timesteps=train_hyperparams["total_timesteps"],
-            callback=[env_phase_callback, eval_best_model_callback],
+            callback=[
+                env_phase_callback,
+                eval_best_model_callback,
+                LogEveryNTimesteps(train_hyperparams["log_freq"]),
+            ],
             progress_bar=(verbose > 1))
 
     rprint("[green]-> Training finished.[/green]")

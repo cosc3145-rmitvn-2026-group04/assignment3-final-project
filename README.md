@@ -65,25 +65,10 @@ pip install -r requirements.txt
 python -m src.part1.main
 ```
 
-or
-
-```
-python ./src/part1/main.py
-```
-
 ### Part 2
-
-The CLI command to execute this module is as follow:
-
 
 ```
 python -m src.part2.main
-```
-
-or
-
-```
-python ./src/part2/main.py
 ```
 
 #### Arguments:
@@ -122,8 +107,7 @@ For more information, please use the `-h`, `-help`, or `--help` flag.
 - `src/part2/rl_model_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
 - `src/part2/rl_train_hparams.json`: Contains the hyperparameters for the RL training procedure of this module.
 
-
-### Outputs:
+#### Outputs:
 
 - `models/part2`: Default trained model export directory.
-- `logs/part2`: Training logs directory (Tensorboard and CSV). Use `tensorboard --logdir /logs/part2` to view.
+- `logs/part2`: Training logs directory (Tensorboard and CSV). Use `python -m tensorboard --logdir=logs/part2` to view.
