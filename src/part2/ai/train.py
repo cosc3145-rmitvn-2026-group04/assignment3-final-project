@@ -55,9 +55,9 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                     self.episode_results.clear()
                     if self.verbose > 2:
                         rprint("[cyan]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/cyan]" % (
-                            self.n_episodes,
                             win_rate,
                             self.win_rate_threshold,
+                            self.n_episodes,
                             self.current_phase_index,
                             next_phase_index,
                         ))
