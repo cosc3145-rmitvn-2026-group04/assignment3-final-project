@@ -64,7 +64,7 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
                     if self.verbose > 2:
-                        rprint("[cyan]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/cyan]" % (
+                        rprint("[green]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/green]" % (
                             win_rate,
                             self.win_rate_threshold,
                             self.n_episodes,
@@ -96,6 +96,7 @@ class EvalBestModelCallback(BaseCallback):
         self.eval_freq: int = eval_freq
         self.n_eval_episodes: int = n_eval_episodes
         self.best_mean_reward: float = float("-inf")
+        self.best_std_reward: float = float("inf")
 
     def _init_callback(self) -> None:
         self.eval_model.save(self.best_model_temp_file_path)
@@ -103,20 +104,51 @@ class EvalBestModelCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.eval_freq == 0:
-            mean_reward, _std_reward_per_episode = evaluate_policy(
+            mean_reward, std_reward = evaluate_policy(
                     model=self.eval_model,
                     env=self.eval_env,
                     n_eval_episodes=self.n_eval_episodes,
                     deterministic=True)
-            if mean_reward > self.best_mean_reward: # type: ignore
-                    self.best_mean_reward = mean_reward # type: ignore
+
+            self.logger.record("eval/mean_reward", mean_reward)
+            self.logger.record("eval/std_reward", std_reward)
+            self.logger.dump(step=self.num_timesteps)
+            if self.verbose > 1:
+                log_dict: dict[str, Any] = {
+                    "step": self.num_timesteps,
+                    "eval/mean_reward": mean_reward,
+                    "eval/std_reward": std_reward,
+                    "eval/best_mean_reward": self.best_mean_reward,
+                    "eval/best_std_reward": self.best_std_reward,
+                }
+                sys.stdout.write("EvalStats%s\n" % (json.dumps(log_dict)))
+                sys.stdout.flush()
+
+            if mean_reward > self.best_mean_reward: # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                    self.best_mean_reward = mean_reward # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                    self.best_std_reward = std_reward  # type: ignore pyright: ignore[reportAttributeAccessIssue]
                     self.eval_model.save(self.best_model_temp_file_path)
 
+            self.logger.record("eval/best_mean_reward", self.best_mean_reward)
+            self.logger.dump(step=self.num_timesteps)
+
+            if self.verbose > 1:
+                log_dict: dict[str, Any] = {
+                    "step": self.num_timesteps,
+                    "eval/mean_reward": mean_reward,
+                    "eval/std_reward": std_reward,
+                    "eval/best_mean_reward": self.best_mean_reward,
+                    "eval/best_std_reward": self.best_std_reward,
+                }
+                CYAN = "\033[36m"
+                RESET = "\033[0m"
+                sys.stdout.write("%sEvalStats%s%s\n" % (CYAN, json.dumps(log_dict), RESET))
+                sys.stdout.flush()
         return super()._on_step()
 
 
 class CompactStdoutWriter(KVWriter):
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], step: int = 0, *args, **kwargs) -> None:
         log_dict = { "step": step, **key_values }
         sys.stdout.write("TrainStats%s\n" % (json.dumps(log_dict)))
         sys.stdout.flush()
@@ -217,13 +249,9 @@ def train(
             elif verbose > 0:
                 rprint("[blue]-> PPO model initialized.[/blue]")
         case LearningAlgorithmType.DQN:
-            policy_kwargs: dict[str, Any] = {
-                "net_arch": model_hyperparams["policy_net_arch"]
-            }
             model_class: type[BaseAlgorithm] = DQN
             model = DQN(
                     policy="MlpPolicy",
-                    policy_kwargs=policy_kwargs,
                     env=vec_env,
                     **model_hyperparams["DQN"],
                     verbose=verbose,
@@ -280,6 +308,7 @@ def train(
     if verbose > 0:
         print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
         print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_reward))
+        print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_reward))
     # ==========================
 
     # ====== Model Export ======
