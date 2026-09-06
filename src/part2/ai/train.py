@@ -117,7 +117,7 @@ class EvalBestModelCallback(BaseCallback):
 class CompactStdoutWriter(KVWriter):
     def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         log_dict = { "step": step, **key_values }
-        sys.stdout.write("%s\n" % (json.dumps(log_dict)))
+        sys.stdout.write("TrainStats%s\n" % (json.dumps(log_dict)))
         sys.stdout.flush()
 
     def close(self) -> None:
@@ -185,10 +185,9 @@ def train(
     # ==========================
 
     # ====== Model Config ======
-    logger_outputs: list = ["csv", "tensorboard"]
+    logger: Logger = configure(str(TRAIN_LOG_DIR), ["csv", "tensorboard"])
     if verbose > 1:
-        logger_outputs = [CompactStdoutWriter] + logger_outputs
-    logger: Logger = configure(str(TRAIN_LOG_DIR), logger_outputs)
+        logger.output_formats.append(CompactStdoutWriter())
 
     model_hyperparams: dict[str, Any]
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
