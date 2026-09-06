@@ -1,6 +1,6 @@
 from typing import Any, Iterable, List
 import pygame
-from pygame import Surface, FRect, Rect
+from pygame import Surface, Rect
 from pygame.math import Vector2
 from pygame.event import Event
 from pygame.font import Font
@@ -246,7 +246,7 @@ class Group(PygameSpriteGroup):
         """Returns a list of objects in the group"""
         return super().sprites()
 
-    def draw(self, surface: Surface, *args, **kwargs) -> List[FRect | Rect]:
+    def draw(self, surface: Surface, *args, **kwargs) -> List[Rect]:
         # Overload pygame.sprite.Group.draw() behavior.
         for obj in self.objects():
             if hasattr(obj, "draw") and callable(getattr(obj, "draw")):

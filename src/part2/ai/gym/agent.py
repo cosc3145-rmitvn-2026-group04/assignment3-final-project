@@ -1,4 +1,4 @@
-from pygame import Event
+from pygame.event import Event
 from part2.game.player import Action, PlayerController
 
 

@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 from enum import Enum
 from pathlib import Path
@@ -7,9 +8,9 @@ import psutil
 import cloudpickle
 from rich import print as rprint
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.logger import configure, Logger, KVWriter
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.logger import configure, Logger
 from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -113,6 +114,16 @@ class EvalBestModelCallback(BaseCallback):
         return super()._on_step()
 
 
+class CompactStdoutWriter(KVWriter):
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+        log_dict = { "step": step, **key_values }
+        sys.stdout.write("%s\n" % (json.dumps(log_dict)))
+        sys.stdout.flush()
+
+    def close(self) -> None:
+        pass
+
+
 def train(
         action_style: ActionStyle,
         phases: dict[str, Any],
@@ -174,7 +185,10 @@ def train(
     # ==========================
 
     # ====== Model Config ======
-    logger: Logger = configure(str(TRAIN_LOG_DIR), ["stdout", "csv", "tensorboard"])
+    logger_outputs: list = ["csv", "tensorboard"]
+    if verbose > 1:
+        logger_outputs = [CompactStdoutWriter] + logger_outputs
+    logger: Logger = configure(str(TRAIN_LOG_DIR), logger_outputs)
 
     model_hyperparams: dict[str, Any]
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
