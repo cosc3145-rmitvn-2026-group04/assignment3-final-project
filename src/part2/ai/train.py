@@ -1,15 +1,18 @@
-from pathlib import Path
 from typing import Any
 from enum import Enum
+from pathlib import Path
+from statistics import mean
+import copy
+import json
 import psutil
 import cloudpickle
-import json
 from rich import print as rprint
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
-from part2.ai.gym.environment import make_environment_fn
+from stable_baselines3.common.evaluation import evaluate_policy
+from part2.ai.gym.environment import make_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.config import MODELS_DIR
@@ -30,11 +33,11 @@ class GameEnvironmentPhaseCallback(BaseCallback):
         Advances the environment phase when a target win rate is reached within
         the last `n_episodes`.
         """
+        super().__init__(verbose)
         self.win_rate_threshold: float = win_rate_threshold
         self.n_episodes: int = n_episodes
         self.episode_results: list[bool] = []
         self.current_phase_index: int = 0
-        super().__init__(verbose)
 
     def _on_step(self) -> bool:
         for info in self.locals.get("infos", []):
@@ -61,6 +64,50 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                             self.current_phase_index,
                             next_phase_index,
                         ))
+
+        return super()._on_step()
+
+
+class EvalBestModelCallback(BaseCallback):
+    def __init__(self,
+            eval_model: Any,
+            eval_env: GameEnvironment,
+            eval_freq: int = 60,
+            n_eval_episodes = 10,
+            verbose: int = 0
+    ):
+        """
+        Keeps track of the best model in `self.best_model`. Evaluation happens
+        every `eval_freq` calls for `n_eval_episodes`.
+        """
+        super().__init__(verbose)
+        self.eval_model: Any = eval_model
+        self.best_model: Any = None
+        self.eval_env: GameEnvironment = eval_env
+        self.eval_freq: int = eval_freq
+        self.n_eval_episodes: int = n_eval_episodes
+        self.best_mean_reward: float = float("-inf")
+
+    def _init_callback(self) -> None:
+        self.best_model = copy.deepcopy(self.eval_model)
+        return super()._init_callback()
+
+    def _on_step(self) -> bool:
+        if self.n_calls % self.eval_freq == 0:
+            _mean_reward, _std_reward_per_episode = evaluate_policy(
+                    model=self.eval_model,
+                    env=self.eval_env,
+                    n_eval_episodes=self.n_eval_episodes,
+                    deterministic=True)
+            mean_reward: float = float("-inf")
+            if type(_mean_reward) == float:
+                mean_reward = _mean_reward
+            elif type(_mean_reward) == list:
+                mean_reward = mean(_mean_reward)
+
+            if mean_reward > self.best_mean_reward:
+                self.best_mean_reward = mean_reward
+                self.best_model = copy.deepcopy(self.eval_model)
 
         return super()._on_step()
 
@@ -150,6 +197,10 @@ def train(
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
             elif verbose > 0:
                 rprint("[blue]-> DQN Model initialized.[/blue]")
+    eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
+            eval_model=model,
+            eval_env=GameEnvironment(action_style=action_style, phases=phases),
+            verbose=verbose)
     # ==========================
 
     # ======== Training ========
@@ -168,7 +219,7 @@ def train(
 
     model.learn(
             **train_hyperparams,
-            callback=[env_phase_callback],
+            callback=[env_phase_callback, eval_best_model_callback],
             progress_bar=(verbose > 1))
 
     rprint("[green]-> Training finished.[/green]")
@@ -177,11 +228,12 @@ def train(
     # ==========================
 
     # ====== Model Export ======
-    model.env = None
-    model.n_envs = 0
+    best_model: Any = eval_best_model_callback.best_model
+    best_model.env = None
+    best_model.n_envs = 0
     with open(_output_model, "wb") as file:
         model_pkl: dict[str, Any] = {
-            "model": model,
+            "model": best_model,
             "metadata": {
                 "algorithm": algorithm_name_str,
                 "control_style": action_style_name_str,
