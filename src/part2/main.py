@@ -9,12 +9,9 @@ from part2.ai.evaluate import evaluate
 from part2.game.play import play
 from part2.game.phase import get_phases
 from part2.game.player import ActionStyle
-from part2.config import MODELS_DIR
 
 
 def main() -> None:
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)  # Verify models directory.
-
     arg_parser: ArgumentParser = ArgumentParser(
             description="Assignment 3 [Undergrad] - Part 2: Arena Deep RL",
             allow_abbrev=True,

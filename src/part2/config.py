@@ -5,6 +5,7 @@ from pygame.color import Color
 BASE_DIR: Path = Path(__file__).resolve().parent
 ASSET_DIR: Path = BASE_DIR / "assets"
 MODELS_DIR: Path = Path(__file__).resolve().parents[2] / "models" / "part2"
+MODELS_TRAIN_TEMP_DIR: Path = Path(__file__).resolve().parents[2] / "models" / "part2" / "temp"
 
 # Display
 WINDOW_WIDTH: int = 800

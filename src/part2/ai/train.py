@@ -1,8 +1,7 @@
 from typing import Any
 from enum import Enum
 from pathlib import Path
-from statistics import mean
-import copy
+from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 import json
 import psutil
 import cloudpickle
@@ -12,10 +11,11 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.monitor import Monitor
 from part2.ai.gym.environment import make_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
-from part2.config import MODELS_DIR
+from part2.config import MODELS_DIR, MODELS_TRAIN_TEMP_DIR, FPS
 
 ENV_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_env_hparams.json"
 MODEL_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_model_hparams.json"
@@ -71,8 +71,9 @@ class GameEnvironmentPhaseCallback(BaseCallback):
 class EvalBestModelCallback(BaseCallback):
     def __init__(self,
             eval_model: Any,
-            eval_env: GameEnvironment,
-            eval_freq: int = 60,
+            temp_file_path: Path,
+            eval_env: Monitor,
+            eval_freq: int = FPS,
             n_eval_episodes = 10,
             verbose: int = 0
     ):
@@ -82,32 +83,27 @@ class EvalBestModelCallback(BaseCallback):
         """
         super().__init__(verbose)
         self.eval_model: Any = eval_model
+        self.best_model_temp_file_path: Path = temp_file_path
         self.best_model: Any = None
-        self.eval_env: GameEnvironment = eval_env
+        self.eval_env: Monitor = eval_env
         self.eval_freq: int = eval_freq
         self.n_eval_episodes: int = n_eval_episodes
         self.best_mean_reward: float = float("-inf")
 
     def _init_callback(self) -> None:
-        self.best_model = copy.deepcopy(self.eval_model)
+        self.eval_model.save(self.best_model_temp_file_path)
         return super()._init_callback()
 
     def _on_step(self) -> bool:
         if self.n_calls % self.eval_freq == 0:
-            _mean_reward, _std_reward_per_episode = evaluate_policy(
+            mean_reward, _std_reward_per_episode = evaluate_policy(
                     model=self.eval_model,
                     env=self.eval_env,
                     n_eval_episodes=self.n_eval_episodes,
                     deterministic=True)
-            mean_reward: float = float("-inf")
-            if type(_mean_reward) == float:
-                mean_reward = _mean_reward
-            elif type(_mean_reward) == list:
-                mean_reward = mean(_mean_reward)
-
-            if mean_reward > self.best_mean_reward:
-                self.best_mean_reward = mean_reward
-                self.best_model = copy.deepcopy(self.eval_model)
+            if mean_reward > self.best_mean_reward: # type: ignore
+                    self.best_mean_reward = mean_reward # type: ignore
+                    self.eval_model.save(self.best_model_temp_file_path)
 
         return super()._on_step()
 
@@ -123,6 +119,9 @@ def train(
         verbose: int = 0
 ) -> None:
     rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
+
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)  # Verify models directory.
+    MODELS_TRAIN_TEMP_DIR.mkdir(parents=True, exist_ok=True)  # Verify models directory.
 
     if device in ["cpu", "meta", "xla", "xpu", "mkldnn"]:
         available_cpu_count: int = len(psutil.Process().cpu_affinity())
@@ -174,6 +173,7 @@ def train(
     model: BaseAlgorithm
     match algorithm:
         case LearningAlgorithmType.PPO:
+            model_class: type[BaseAlgorithm] = PPO
             model = PPO(
                     policy="MlpPolicy",
                     env=vec_env,
@@ -186,6 +186,7 @@ def train(
             elif verbose > 0:
                 rprint("[blue]-> PPO model initialized.[/blue]")
         case LearningAlgorithmType.DQN:
+            model_class: type[BaseAlgorithm] = DQN
             model = DQN(
                     policy="MlpPolicy",
                     env=vec_env,
@@ -197,10 +198,6 @@ def train(
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
             elif verbose > 0:
                 rprint("[blue]-> DQN Model initialized.[/blue]")
-    eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
-            eval_model=model,
-            eval_env=GameEnvironment(action_style=action_style, phases=phases),
-            verbose=verbose)
     # ==========================
 
     # ======== Training ========
@@ -217,18 +214,36 @@ def train(
     else:
         rprint("[green]-> Training started on %d thread(s).[/green]" % (n_threads))
 
+    best_model_temp_file: _TemporaryFileWrapper = NamedTemporaryFile(
+            suffix=".zip",
+            dir=MODELS_TRAIN_TEMP_DIR,
+            delete=False)
+    best_model_temp_file_path: Path = Path(best_model_temp_file.name)
+    best_model_temp_file.close()
+    if verbose > 1:
+        print("Tempfile: '%s'" % (str(best_model_temp_file_path)))
+
+    eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
+            eval_model=model,
+            temp_file_path=best_model_temp_file_path,
+            eval_env=Monitor(GameEnvironment(action_style=action_style, phases=phases)),
+            eval_freq=train_hyperparams["eval_freq"],
+            n_eval_episodes=train_hyperparams["n_eval_episodes"],
+            verbose=verbose)
+
     model.learn(
-            **train_hyperparams,
+            total_timesteps=train_hyperparams["total_timesteps"],
             callback=[env_phase_callback, eval_best_model_callback],
             progress_bar=(verbose > 1))
 
     rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
         print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
+        print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_reward))
     # ==========================
 
     # ====== Model Export ======
-    best_model: Any = eval_best_model_callback.best_model
+    best_model: Any = model_class.load(eval_best_model_callback.best_model_temp_file_path)
     best_model.env = None
     best_model.n_envs = 0
     with open(_output_model, "wb") as file:
@@ -242,6 +257,8 @@ def train(
         cloudpickle.dump(model_pkl, file)
     if verbose > 0:
         rprint("[magenta]-> Saved model to '%s'.[/magenta]" % (str(_output_model)))
+
+    best_model_temp_file_path.unlink()
     # ==========================
 
     rprint("[bold yellow][ DONE ][/bold yellow]")

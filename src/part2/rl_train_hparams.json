@@ -1,3 +1,5 @@
 {
-    "total_timesteps": 100000
+    "total_timesteps": 1000000,
+    "eval_freq": 60,
+    "n_eval_episodes": 10
 }
