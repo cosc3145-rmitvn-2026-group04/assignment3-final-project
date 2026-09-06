@@ -1,3 +1,4 @@
+from typing import Any
 from enum import Enum
 from pygame import Surface
 from pygame.math import Vector2
@@ -5,11 +6,7 @@ from pygame.font import Font
 from pygame.event import Event
 from part2.game.player import Player, PlayerBulletPool
 from part2.game.enemy import EnemySpawner, EnemySpawnerPool, EnemyPool
-from part2.game.config import (
-        PLAYER_HEALTH,
-        PLAYER_SPEED,
-        PLAYER_ANGULAR_SPEED,
-        ENEMY_SPAWNER_HEALTH)
+from part2.game.config import PLAYER_HEALTH
 from part2.config import (
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
@@ -18,51 +15,50 @@ from part2.config import (
 
 class GameStatus(Enum):
     GAME_LOST = -1
-    GAME_ONGOING = 0
+    GAME_IN_PROGRESS = 0
     GAME_WON = 1
 
 
 class Game:
-    def __init__(self) -> None:
+    def __init__(self, player: Player, phase_data: dict[str, Any]) -> None:
+        self.phase_data: dict[str, Any] = phase_data
+        self.player: Player = player
         self.reset()
 
     def reset(self) -> None:
+        screen_center: Vector2 = Vector2(WINDOW_WIDTH // 2, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2)
+
         self.game_over: bool = False
-        self.status: GameStatus = GameStatus.GAME_ONGOING
+        self.status: GameStatus = GameStatus.GAME_IN_PROGRESS
 
+        self.player.health = PLAYER_HEALTH
+        self.player.rotation = 0.0
+        self.player.position = screen_center + Vector2(
+                self.phase_data["player_position"]["x"],
+                self.phase_data["player_position"]["y"])
         self.player_bullet_pool: PlayerBulletPool = PlayerBulletPool()
+        self.player.bullet_pool = self.player_bullet_pool
+
         self.enemy_spawner_pool: EnemySpawnerPool = EnemySpawnerPool()
-        self.enemy_pool: EnemyPool = EnemyPool(max_size=15)
+        self.enemy_pool: EnemyPool = EnemyPool(max_size=self.phase_data["max_enemies"])
 
-        self.player: Player = Player(
-                health=PLAYER_HEALTH,
-                speed=PLAYER_SPEED,
-                angular_speed=PLAYER_ANGULAR_SPEED,
-                position=Vector2(WINDOW_WIDTH // 2, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2),
-                radius=12.0,
-                offset=Vector2(0, 4)
-                )
-
-        self.enemy_spawner_pool.add(
-                EnemySpawner(
-                        health=ENEMY_SPAWNER_HEALTH,
-                        enemy_spawn_amount=2,
-                        enemy_spawn_delay=5.0,
-                        activation_delay=3.0,
-                        position=Vector2(WINDOW_WIDTH // 4, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2),
-                        radius=30.0))
-        self.enemy_spawner_pool.add(
-                EnemySpawner(
-                        health=ENEMY_SPAWNER_HEALTH,
-                        enemy_spawn_amount=2,
-                        enemy_spawn_delay=5.0,
-                        activation_delay=4.0,
-                        position=Vector2(WINDOW_WIDTH // 4 * 3, (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2),
-                        radius=30.0))
+        spawner_index: int
+        for spawner_index in range(len(self.phase_data["enemy_spawners"])):
+                self.enemy_spawner_pool.add(
+                        EnemySpawner(
+                                health=self.phase_data["enemy_spawners"][spawner_index]["health"],
+                                enemy_spawn_amount=self.phase_data["enemy_spawners"][spawner_index]["spawn_amount"],
+                                enemy_spawn_delay=self.phase_data["enemy_spawners"][spawner_index]["spawn_delay"],
+                                activation_delay=self.phase_data["enemy_spawners"][spawner_index]["activation_delay"],
+                                position=screen_center + Vector2(
+                                        self.phase_data["enemy_spawners"][spawner_index]["position"]["x"],
+                                        self.phase_data["enemy_spawners"][spawner_index]["position"]["y"],
+                                        ),
+                                radius=30.0))
 
     def update(self, delta: float, events: list[Event]) -> None:
         if not self.game_over:
-            self.player.update(delta, events, self.player_bullet_pool)
+            self.player.update(delta, events)
             self.player_bullet_pool.update(delta, events, self.enemy_spawner_pool, self.enemy_pool)
             self.enemy_spawner_pool.update(delta, events, self.enemy_pool)
             self.enemy_pool.update(delta, events, self.player, self.enemy_pool)

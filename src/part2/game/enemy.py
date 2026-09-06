@@ -12,7 +12,7 @@ from part2.config import (
         WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT,
         COLOR_RED)
-from common.engine.core import SpatialObject, KinematicObject, Group
+from part2.engine.core import Timer, SpatialObject, KinematicObject, Group
 import part2.game.player as player
 from part2.game.config import (
         ENEMY_SPEED,
@@ -32,36 +32,35 @@ class EnemySpawner(SpatialObject):
         kwargs["radius"] = 30.0
         super().__init__(**kwargs)
         self.health: int = health
-        self.spawn_amount: int = enemy_spawn_amount  # The amount of enemies being spawned at once per spawn cycle.
-        self.enemy_spawn_delay: float = enemy_spawn_delay  # The delay in seconds between spawn cycles.
-        self.activation_delay: float = activation_delay  # The duration that this spawner will sleep before activating.
+        self.max_health: int = health
+        self.enemy_spawn_amount: int = enemy_spawn_amount  # The amount of enemies being spawned at once per spawn cycle.
+        self.enemy_spawn_cooldown_timer: Timer = Timer(wait_time=enemy_spawn_delay, one_shot=True)
+        self.activation_timer: Timer = Timer(wait_time=activation_delay, one_shot=True, autostart=True)
         self.invulnerable: bool = False
-        self.last_invulnerable_tick: int = pygame.time.get_ticks()
-        self.__max_health: int = health
-        self.__ready_tick: int = pygame.time.get_ticks()
-        self.__last_spawn_tick: int = pygame.time.get_ticks()
+        self.invulnerable_timer: Timer = Timer(0.1, one_shot=True)
         self.__first_spawn: bool = True
         self.__killed: bool = False
-        self.__killed_tick: int = pygame.time.get_ticks()
+        self.__kill_cooldown_timer: Timer = Timer(wait_time=0.05, one_shot=True)
 
     def update(self, delta: float, events: list[Event], enemy_pool: EnemyPool) -> None:
-        current_tick: int = pygame.time.get_ticks()
-
-        if self.__killed and (current_tick - self.__killed_tick) / 1000.0 > 0.05:
+        self.__kill_cooldown_timer.update(delta)
+        if self.__killed and self.__kill_cooldown_timer.is_stopped():
             self.kill()
             return
 
-        active: bool = (current_tick - self.__ready_tick) / 1000.0 >= self.activation_delay
-        spawn_ready: bool = (current_tick - self.__last_spawn_tick) / 1000.0 >= self.enemy_spawn_delay
+        self.activation_timer.update(delta)
+        self.enemy_spawn_cooldown_timer.update(delta)
+        active: bool = self.activation_timer.is_stopped()
+        spawn_ready: bool = self.enemy_spawn_cooldown_timer.is_stopped()
         if (
             active
             and (spawn_ready or self.__first_spawn)
             and len(enemy_pool.objects()) < enemy_pool.max_size
         ):
+            self.enemy_spawn_cooldown_timer.start()
             if self.__first_spawn:
                 self.__first_spawn = False
-            self.__last_spawn_tick = current_tick
-            for _ in range(self.spawn_amount):
+            for _ in range(self.enemy_spawn_amount):
                 new_enemy: Enemy = Enemy(
                         speed=ENEMY_SPEED,
                         position=self.position.copy())
@@ -70,17 +69,16 @@ class EnemySpawner(SpatialObject):
 
         if (
             not self.__first_spawn
-            and (current_tick - self.__last_spawn_tick) / 1000.0 <= 0.1
+            and self.enemy_spawn_cooldown_timer.wait_time - self.enemy_spawn_cooldown_timer.time_left <= 0.1
             and len(enemy_pool.objects()) <= enemy_pool.max_size
         ):
             self.scale = Vector2(1.1, 1.1)
         else:
             self.scale = Vector2(1.0, 1.0)
 
+        self.invulnerable_timer.update(delta)
         if self.invulnerable:
-            current_tick: int = pygame.time.get_ticks()
-
-            if (current_tick - self.last_invulnerable_tick) / 1000.0 <= 0.1:
+            if not self.invulnerable_timer.is_stopped():
                 self.scale = Vector2(0.9, 0.9)
                 self._image_source = pygame.image.load(ASSET_DIR / "sprite_enemy_spawner_hurt.png")
             else:
@@ -89,16 +87,17 @@ class EnemySpawner(SpatialObject):
                 self.invulnerable = False
 
     def hurt(self) -> None:
-        if self.health > 0:
-            self.health -= 1
-        if self.health == 0:
-            self.scale = Vector2(0.8, 0.8)
-            self._image_source = pygame.image.load(ASSET_DIR / "sprite_enemy_spawner_kill.png")
-            self.__killed = True
-            self.__killed_tick = pygame.time.get_ticks()
-            return
-        self.invulnerable = True
-        self.last_invulnerable_tick = pygame.time.get_ticks()
+        if not self.invulnerable:
+            if self.health > 0:
+                self.health -= 1
+            if self.health == 0:
+                self.scale = Vector2(0.8, 0.8)
+                self._image_source = pygame.image.load(ASSET_DIR / "sprite_enemy_spawner_kill.png")
+                self.__killed = True
+                self.__kill_cooldown_timer.start()
+                return
+            self.invulnerable = True
+            self.invulnerable_timer.start()
 
     def draw(self,
             screen: Surface,
@@ -106,7 +105,7 @@ class EnemySpawner(SpatialObject):
             *args, **kwargs
     ) -> None:
         super().draw(screen, *args, **kwargs)
-        hp_bar_text: str = "[%d/%d HP]" % (self.health, self.__max_health)
+        hp_bar_text: str = "[%d/%d HP]" % (self.health, self.max_health)
         hp_bar_label: Surface = fonts["small"].render(
                 hp_bar_text,
                 True, COLOR_RED)
@@ -126,11 +125,11 @@ class EnemySpawnerPool(Group):
 
 
 class Enemy(KinematicObject):
-    def __init__(self, speed: int, **kwargs):
+    def __init__(self, speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy.png")
         kwargs["radius"] = 10.0
         super().__init__(**kwargs)
-        self.speed: int = speed
+        self.speed: float = speed
 
     def update(self,
             delta: float,

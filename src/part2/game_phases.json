@@ -1,0 +1,144 @@
+{
+    "phases": [
+        {
+            "phase_name": "0",
+            "player_position": {
+                "x": 0,
+                "y": 200
+            },
+            "enemy_spawners": [
+                {
+                    "position": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "health": 80,
+                    "spawn_amount": 2,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 3.0
+                }
+            ],
+            "max_enemies": 5
+        },
+        {
+            "phase_name": "1",
+            "player_position": {
+                "x": 0,
+                "y": 0
+            },
+            "enemy_spawners": [
+                {
+                    "position": {
+                        "x": -260,
+                        "y": 0
+                    },
+                    "health": 45,
+                    "spawn_amount": 2,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 4.0
+                },
+                {
+                    "position": {
+                        "x": 260,
+                        "y": 0
+                    },
+                    "health": 45,
+                    "spawn_amount": 2,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 5.0
+                }
+            ],
+            "max_enemies": 10
+        },
+        {
+            "phase_name": "2",
+            "player_position": {
+                "x": 0,
+                "y": 0
+            },
+            "enemy_spawners": [
+                {
+                    "position": {
+                        "x": 0,
+                        "y": -200
+                    },
+                    "health": 50,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 4.0
+                },
+                {
+                    "position": {
+                        "x": -260,
+                        "y": 200
+                    },
+                    "health": 50,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 5.0
+                },
+                {
+                    "position": {
+                        "x": 260,
+                        "y": 200
+                    },
+                    "health": 50,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 6.0
+                }
+            ],
+            "max_enemies": 15
+        },
+        {
+            "phase_name": "3",
+            "player_position": {
+                "x": 0,
+                "y": 0
+            },
+            "enemy_spawners": [
+                {
+                    "position": {
+                        "x": -320,
+                        "y": -220
+                    },
+                    "health": 75,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 3.0
+                },
+                {
+                    "position": {
+                        "x": 320,
+                        "y": -220
+                    },
+                    "health": 75,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 4.0
+                },
+                {
+                    "position": {
+                        "x": 320,
+                        "y": 220
+                    },
+                    "health": 75,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 5.0
+                },
+                {
+                    "position": {
+                        "x": -320,
+                        "y": 220
+                    },
+                    "health": 75,
+                    "spawn_amount": 1,
+                    "spawn_delay": 5.0,
+                    "activation_delay": 6.0
+                }
+            ],
+            "max_enemies": 20
+        }
+    ]
+}
