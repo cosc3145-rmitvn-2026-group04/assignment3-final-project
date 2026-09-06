@@ -97,7 +97,7 @@ class GameEnvironment(Env):
 
         previous_agent_position: Vector2 = self.agent.position
         previous_agent_rotation: float = self.agent.rotation
-        previous_agent_health: int = self.game.player.health
+        previous_agent_health: int = self.agent.health
         previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
         previous_total_enemy_spawners_health: int = sum([
                 enemy_spawner.health
@@ -133,7 +133,7 @@ class GameEnvironment(Env):
                 * self.hparams["reward_agent_enemy_distance"]
             )
 
-        current_agent_health: int = self.game.player.health
+        current_agent_health: int = self.agent.health
         reward += (
             max(0, previous_agent_health - current_agent_health)
             * self.hparams["reward_agent_hurt"]
