@@ -208,9 +208,13 @@ def train(
             elif verbose > 0:
                 rprint("[blue]-> PPO model initialized.[/blue]")
         case LearningAlgorithmType.DQN:
+            policy_kwargs: dict[str, Any] = {
+                "net_arch": model_hyperparams["policy_net_arch"]
+            }
             model_class: type[BaseAlgorithm] = DQN
             model = DQN(
                     policy="MlpPolicy",
+                    policy_kwargs=policy_kwargs,
                     env=vec_env,
                     **model_hyperparams["DQN"],
                     verbose=verbose,

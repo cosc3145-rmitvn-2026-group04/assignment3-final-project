@@ -11,7 +11,6 @@ from part2.ai.config import (
         COLOR_EVAL_AUX_HUD_INFO_FOREGROUND_DIM)
 from part2.engine.core import UserInterface
 from part2.game.textlabel import blit_lines, TextAlignment
-from part2.game.player import ActionStyle
 from part2.config import (
         WINDOW_WIDTH, WINDOW_HEIGHT,
         MAIN_HUD_HEIGHT)
