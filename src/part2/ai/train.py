@@ -7,6 +7,8 @@ import json
 import psutil
 import cloudpickle
 from rich import print as rprint
+import numpy as np
+from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import configure, Logger, KVWriter
 from stable_baselines3 import PPO, DQN
@@ -14,7 +16,7 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from part2.ai.gym.environment import make_environment_fn, GameEnvironment
+from part2.ai.gym.environment import make_game_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.config import (
@@ -63,7 +65,7 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
                     if self.verbose > 2:
-                        rprint("[cyan]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/cyan]" % (
+                        rprint("[green]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/green]" % (
                             win_rate,
                             self.win_rate_threshold,
                             self.n_episodes,
@@ -94,7 +96,9 @@ class EvalBestModelCallback(BaseCallback):
         self.eval_env: Monitor = eval_env
         self.eval_freq: int = eval_freq
         self.n_eval_episodes: int = n_eval_episodes
+        self.best_model_step: int = 0
         self.best_mean_reward: float = float("-inf")
+        self.best_std_reward: float = float("inf")
 
     def _init_callback(self) -> None:
         self.eval_model.save(self.best_model_temp_file_path)
@@ -102,21 +106,56 @@ class EvalBestModelCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.eval_freq == 0:
-            mean_reward, _std_reward_per_episode = evaluate_policy(
+            mean_reward, std_reward = evaluate_policy(
                     model=self.eval_model,
                     env=self.eval_env,
                     n_eval_episodes=self.n_eval_episodes,
                     deterministic=True)
-            if mean_reward > self.best_mean_reward: # type: ignore
-                    self.best_mean_reward = mean_reward # type: ignore
-                    self.eval_model.save(self.best_model_temp_file_path)
 
+            self.logger.record("eval/mean_reward", mean_reward)
+            self.logger.record("eval/std_reward", std_reward)
+
+            if mean_reward > self.best_mean_reward: # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.best_model_step = self.num_timesteps
+                self.best_mean_reward = mean_reward # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.best_std_reward = std_reward  # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.eval_model.save(self.best_model_temp_file_path)
+
+            self.logger.record("eval/best_model_step", self.best_model_step)
+            self.logger.record("eval/best_mean_reward", self.best_mean_reward)
+
+            self.logger.dump(step=self.num_timesteps)
+
+            if self.verbose > 1:
+                log_dict: dict[str, Any] = {
+                    "step": self.num_timesteps,
+                    "eval/mean_reward": mean_reward,
+                    "eval/std_reward": std_reward,
+                    "eval/best_model_step": self.best_model_step,
+                    "eval/best_mean_reward": self.best_mean_reward,
+                    "eval/best_std_reward": self.best_std_reward,
+                }
+                CYAN = "\033[36m"
+                RESET = "\033[0m"
+                sys.stdout.write("%sEvalStats%s%s\n" % (CYAN, json.dumps(log_dict), RESET))
+                sys.stdout.flush()
         return super()._on_step()
 
 
 class CompactStdoutWriter(KVWriter):
-    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], step: int = 0, *args, **kwargs) -> None:
         log_dict = { "step": step, **key_values }
+        key: str
+        value: Any
+        for key, value in log_dict.items():
+            if (
+                type(value) in [
+                    np.float16,
+                    np.float32,
+                    np.float64,
+                ]
+            ):
+                log_dict[key] = float(value)
         sys.stdout.write("TrainStats%s\n" % (json.dumps(log_dict)))
         sys.stdout.flush()
 
@@ -140,6 +179,14 @@ def train(
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_TRAIN_TEMP_DIR.mkdir(parents=True, exist_ok=True)
     TRAIN_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    if verbose > 2:
+        print("Default MODEL_DIR='%s'" % (str(MODELS_DIR)))
+        print("Default MODELS_TRAIN_TEMP_DIR='%s'" % (str(MODELS_TRAIN_TEMP_DIR)))
+        print("Default TRAIN_LOG_DIR='%s'" % (str(TRAIN_LOG_DIR)))
+
+    set_random_seed(seed=seed, using_cuda=device=="cuda")
+    if verbose > 0:
+        rprint("[blue]-> RNG randomized.[/blue]")
 
     if device in ["cpu", "meta", "xla", "xpu", "mkldnn"]:
         available_cpu_count: int = len(psutil.Process().cpu_affinity())
@@ -167,7 +214,11 @@ def train(
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
         env_hyperparams = json.load(file)
     vec_env: SubprocVecEnv = SubprocVecEnv([
-        make_environment_fn(action_style, phases, seed + env_index)
+        make_game_environment_fn(
+                action_style=action_style,
+                phases=phases,
+                seed=seed + env_index,
+                max_steps=env_hyperparams["max_steps_episode"])
         for env_index in range(n_threads)
     ])
     env_phase_callback: GameEnvironmentPhaseCallback = GameEnvironmentPhaseCallback(
@@ -249,7 +300,10 @@ def train(
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
             eval_model=model,
             temp_file_path=best_model_temp_file_path,
-            eval_env=Monitor(GameEnvironment(action_style=action_style, phases=phases)),
+            eval_env=Monitor(GameEnvironment(
+                    action_style=action_style,
+                    phases=phases,
+                    max_steps=env_hyperparams["max_steps_episode"])),
             eval_freq=train_hyperparams["eval_freq"],
             n_eval_episodes=train_hyperparams["n_eval_episodes"],
             verbose=verbose)
@@ -266,7 +320,9 @@ def train(
     rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
         print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
+        print("Best model at step: %.2f" % (eval_best_model_callback.best_model_step))
         print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_reward))
+        print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_reward))
     # ==========================
 
     # ====== Model Export ======

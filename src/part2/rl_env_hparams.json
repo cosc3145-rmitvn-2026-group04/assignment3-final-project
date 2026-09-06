@@ -1,6 +1,7 @@
 {
     "max_enemy_spawner_obs": 2,
     "max_enemy_obs": 5,
+    "max_steps_episode": 5000,
     "reward_step": -0.01,
     "reward_agent_movement": 0.5,
     "reward_agent_rotation": 0.25,
@@ -13,6 +14,7 @@
     "reward_enemy_kill": 2.0,
     "reward_phase_win": 100.0,
     "reward_phase_loss": -100.0,
+    "reward_episode_truncated": -100,
     "phase_progress_win_rate_threshold": 0.8,
     "phase_progress_win_rate_episode_memory": 10
 }

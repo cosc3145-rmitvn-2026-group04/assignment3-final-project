@@ -251,7 +251,7 @@ class PlayerBullet(KinematicObject):
             return
 
         collided_enemy_spawners: list[enemy.EnemySpawner] = pygame.sprite.spritecollide(
-                sprite=self, # type: ignore
+                sprite=self, # type: ignore pyright: ignore[reportAttributeAccessIssue]
                 group=enemy_spawner_pool,
                 dokill=False,
                 collided=pygame.sprite.collide_circle)
@@ -262,7 +262,7 @@ class PlayerBullet(KinematicObject):
                 self.__collided = True
 
         collided_enemies: list[enemy.Enemy] = pygame.sprite.spritecollide(
-                sprite=self, # type: ignore
+                sprite=self, # type: ignore pyright: ignore[reportAttributeAccessIssue]
                 group=enemy_pool,
                 dokill=False,
                 collided=pygame.sprite.collide_circle)

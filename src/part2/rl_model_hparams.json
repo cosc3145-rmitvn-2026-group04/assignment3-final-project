@@ -7,6 +7,9 @@
         "ent_coef": 0.01
     },
     "DQN": {
+        "policy_kwargs": {
+            "net_arch": [256, 128, 64]
+        },
         "learning_rate": 0.0001,
         "buffer_size": 100000,
         "learning_starts": 5000,
