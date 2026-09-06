@@ -7,6 +7,7 @@ import json
 import psutil
 import cloudpickle
 from rich import print as rprint
+import numpy as np
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import configure, Logger, KVWriter
@@ -95,6 +96,7 @@ class EvalBestModelCallback(BaseCallback):
         self.eval_env: Monitor = eval_env
         self.eval_freq: int = eval_freq
         self.n_eval_episodes: int = n_eval_episodes
+        self.best_model_step: int = 0
         self.best_mean_reward: float = float("-inf")
         self.best_std_reward: float = float("inf")
 
@@ -112,24 +114,16 @@ class EvalBestModelCallback(BaseCallback):
 
             self.logger.record("eval/mean_reward", mean_reward)
             self.logger.record("eval/std_reward", std_reward)
-            self.logger.dump(step=self.num_timesteps)
-            if self.verbose > 1:
-                log_dict: dict[str, Any] = {
-                    "step": self.num_timesteps,
-                    "eval/mean_reward": mean_reward,
-                    "eval/std_reward": std_reward,
-                    "eval/best_mean_reward": self.best_mean_reward,
-                    "eval/best_std_reward": self.best_std_reward,
-                }
-                sys.stdout.write("EvalStats%s\n" % (json.dumps(log_dict)))
-                sys.stdout.flush()
 
             if mean_reward > self.best_mean_reward: # type: ignore pyright: ignore[reportAttributeAccessIssue]
-                    self.best_mean_reward = mean_reward # type: ignore pyright: ignore[reportAttributeAccessIssue]
-                    self.best_std_reward = std_reward  # type: ignore pyright: ignore[reportAttributeAccessIssue]
-                    self.eval_model.save(self.best_model_temp_file_path)
+                self.best_model_step = self.num_timesteps
+                self.best_mean_reward = mean_reward # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.best_std_reward = std_reward  # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.eval_model.save(self.best_model_temp_file_path)
 
+            self.logger.record("eval/best_model_step", self.best_model_step)
             self.logger.record("eval/best_mean_reward", self.best_mean_reward)
+
             self.logger.dump(step=self.num_timesteps)
 
             if self.verbose > 1:
@@ -137,6 +131,7 @@ class EvalBestModelCallback(BaseCallback):
                     "step": self.num_timesteps,
                     "eval/mean_reward": mean_reward,
                     "eval/std_reward": std_reward,
+                    "eval/best_model_step": self.best_model_step,
                     "eval/best_mean_reward": self.best_mean_reward,
                     "eval/best_std_reward": self.best_std_reward,
                 }
@@ -150,6 +145,17 @@ class EvalBestModelCallback(BaseCallback):
 class CompactStdoutWriter(KVWriter):
     def write(self, key_values: dict[str, Any], step: int = 0, *args, **kwargs) -> None:
         log_dict = { "step": step, **key_values }
+        key: str
+        value: Any
+        for key, value in log_dict.items():
+            if (
+                type(value) in [
+                    np.float16,
+                    np.float32,
+                    np.float64,
+                ]
+            ):
+                log_dict[key] = float(value)
         sys.stdout.write("TrainStats%s\n" % (json.dumps(log_dict)))
         sys.stdout.flush()
 
@@ -314,6 +320,7 @@ def train(
     rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
         print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
+        print("Best model at step: %.2f" % (eval_best_model_callback.best_model_step))
         print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_reward))
         print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_reward))
     # ==========================
