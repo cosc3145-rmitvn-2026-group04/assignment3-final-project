@@ -303,6 +303,7 @@ def train(
             eval_env=Monitor(GameEnvironment(
                     action_style=action_style,
                     phases=phases,
+                    randomize_agent_spawn=True,
                     max_steps=env_hyperparams["max_steps_episode"])),
             eval_freq=train_hyperparams["eval_freq"],
             n_eval_episodes=train_hyperparams["n_eval_episodes"],

@@ -25,7 +25,11 @@ def make_train_game_environment_fn(
     stable_baselines3.common.vec_env.SubprocVecEnv.
     """
     def _init() -> GameEnvironment:
-        environment: GameEnvironment = GameEnvironment(action_style, phases, max_steps)
+        environment: GameEnvironment = GameEnvironment(
+                action_style=action_style,
+                phases=phases,
+                randomize_agent_spawn=True,
+                max_steps=max_steps)
         environment.reset(seed=seed)
         return environment
     return _init
@@ -37,6 +41,7 @@ class GameEnvironment(Env):
     def __init__(self,
             action_style: ActionStyle,
             phases: dict[str, Any],
+            randomize_agent_spawn: bool = False,
             max_steps: int = 0
     ) -> None:
         super().__init__()
@@ -47,6 +52,7 @@ class GameEnvironment(Env):
         self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
         self.phases: dict[str, Any] = phases
+        self.randomize_agent_spawn: bool = randomize_agent_spawn
         self.set_phase(0)
 
         # Agent observation (normalized): [x, y, vel_x, vel_y, rotation, health, can_shoot, is_invulnerable].
@@ -87,6 +93,8 @@ class GameEnvironment(Env):
             raise ValueError("`phase_index` out of bound.")
         self.current_phase_index = phase_index
         self.game = Game(self.agent, self.phases["phases"][self.current_phase_index])
+        if self.randomize_agent_spawn:
+            self._randomize_agent_spawn()
 
     def reset(self,
             *,
@@ -96,9 +104,8 @@ class GameEnvironment(Env):
         super().reset(seed=seed, options=options)
         self.current_step = 0
         self.game.reset()
-        self.agent.position = (Vector2(
-                randint(int(self.agent.radius), int(WINDOW_WIDTH - self.agent.radius)),
-                randint(int(self.agent.radius), int(WINDOW_HEIGHT - MAIN_HUD_HEIGHT - self.agent.radius))))
+        if self.randomize_agent_spawn:
+            self._randomize_agent_spawn()
         return self._get_observation(), self._get_info()
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -252,3 +259,8 @@ class GameEnvironment(Env):
         if len(r) > self.hparams["max_enemy_obs"]:
             r = r[:self.hparams["max_enemy_obs"]]
         return r
+
+    def _randomize_agent_spawn(self) -> None:
+        self.agent.position = (Vector2(
+                randint(int(self.agent.radius), int(WINDOW_WIDTH - self.agent.radius)),
+                randint(int(self.agent.radius), int(WINDOW_HEIGHT - MAIN_HUD_HEIGHT - self.agent.radius))))
