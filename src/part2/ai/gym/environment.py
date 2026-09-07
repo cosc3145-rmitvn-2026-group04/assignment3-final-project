@@ -100,10 +100,8 @@ class GameEnvironment(Env):
         self.current_step += 1
 
         delta: float = 1.0 / FPS  # Fixed ideal delta for gameplay simulation.
-        reward: float = self.hparams["reward_step"]
 
-        previous_agent_position: Vector2 = self.agent.position
-        previous_agent_rotation: float = self.agent.rotation
+        reward: float = 0
         previous_agent_health: int = self.agent.health
         previous_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
         previous_total_enemy_spawners_health: int = sum([
@@ -115,37 +113,21 @@ class GameEnvironment(Env):
         self.agent.controller.update(delta, [], _action)
         self.game.update(delta, events=[])
 
-        current_agent_position: Vector2 = self.agent.position
-        reward += (
-            current_agent_position.distance_to(previous_agent_position)
-            * self.hparams["reward_agent_movement"]
-        )
+        # reward_step
+        reward += self.hparams["reward_step"]
 
-        current_agent_rotation: float = self.agent.rotation
-        reward += (
-            abs(current_agent_rotation - previous_agent_rotation)
-            * self.hparams["reward_agent_rotation"]
-        )
-
+        # reward_agent_shoot
         if _action == Action.SHOOT:
             reward += self.hparams["reward_agent_shoot"]
 
-        observed_enemies: list[Enemy] = self._get_observed_enemies()
-        mean_distance_to_observed_enemies: float = 0.0 if len(observed_enemies) == 0 else mean([
-                self.agent.position.distance_to(enemy.position)
-                for enemy in self._get_observed_enemies()])
-        if mean_distance_to_observed_enemies > 0.0:
-            reward -= (
-                self.hparams["reward_agent_enemy_max_obs_distance"] / mean_distance_to_observed_enemies
-                * self.hparams["reward_agent_enemy_distance"]
-            )
-
+        # reward_agent_hurt
         current_agent_health: int = self.agent.health
         reward += (
             max(0, previous_agent_health - current_agent_health)
             * self.hparams["reward_agent_hurt"]
         )
 
+        # reward_enemy_spawner_hit
         current_total_enemy_spawners_health: int = sum([
                 enemy_spawner.health
                 for enemy_spawner in self.game.enemy_spawner_pool.objects()])
@@ -154,18 +136,21 @@ class GameEnvironment(Env):
             * self.hparams["reward_enemy_spawner_hit"]
         )
 
+        # reward_enemy_spawner_kill
         current_enemy_spawner_count: int = len(self.game.enemy_spawner_pool.objects())
         reward += (
             max(0, previous_enemy_spawner_count - current_enemy_spawner_count)
             * self.hparams["reward_enemy_spawner_kill"]
         )
 
+        # reward_enemy_kill
         current_enemy_count: int = len(self.game.enemy_pool.objects())
         reward += (
             max(0, previous_enemy_count - current_enemy_count)
             * self.hparams["reward_enemy_kill"]
         )
 
+        # reward_phase_win and reward_phase_loss
         terminated: bool = False
         if self.game.game_over:
             terminated = True
@@ -175,6 +160,7 @@ class GameEnvironment(Env):
                 case GameStatus.GAME_LOST:
                     reward += self.hparams["reward_phase_loss"]
 
+        # reward_episode_truncated (behavior leading to soft-locks)
         truncated: bool = False
         if self.max_steps > 0 and self.current_step >= self.max_steps:
             truncated = True
