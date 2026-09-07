@@ -7,7 +7,7 @@ from gymnasium import Env, spaces
 from pygame.math import Vector2, clamp
 from part2.ai.gym.agent import PlayerControllerAgent
 from part2.ai.gym.config import get_hyperparameters
-from part2.game.player import Player, Action, ActionStyle, ACTIONS
+from part2.game.player import Player, Action, ActionStyle, COMPOSITE_ACTIONS
 from part2.game.enemy import EnemySpawner, Enemy
 from part2.game.game import Game, GameStatus
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
@@ -88,8 +88,8 @@ class GameEnvironment(Env):
                 shape=(player_observation_vector_len + enemies_observation_vector_len,),
                 dtype=np.float32)
 
-        self.action_space = spaces.Discrete(len(ACTIONS[action_style]))
-        self._actions: dict[int, Action] = ACTIONS[action_style]
+        self.action_space = spaces.Discrete(len(COMPOSITE_ACTIONS[action_style]))
+        self._composite_actions: dict[int, list[Action]] = COMPOSITE_ACTIONS[action_style]
 
     def set_phase(self, phase_index: int) -> None:
         if not 0 <= phase_index < len(self.phases["phases"]):
@@ -128,15 +128,16 @@ class GameEnvironment(Env):
                 for enemy_spawner in self.game.enemy_spawner_pool.objects()])
         previous_enemy_count: int = len(self.game.enemy_pool.objects())
 
-        _action: Action = self._actions[action.item()]
-        self.agent.controller.update(delta, [], _action)
+        _actions: list[Action] = self._composite_actions[action.item()]
+        if isinstance(self.agent.controller, PlayerControllerAgent):
+            self.agent.controller.set_actions(_actions)
         self.game.update(delta, events=[])
 
         # reward_step
         reward += self.hparams["reward_step"]
 
         # reward_agent_shoot
-        if _action == Action.SHOOT:
+        if Action.SHOOT in _actions:
             reward += self.hparams["reward_agent_shoot"]
 
         # reward_agent_hurt
@@ -230,10 +231,10 @@ class GameEnvironment(Env):
             enemy_relative_position: Vector2 = enemy.position - self.agent.position
             enemy_relative_velocity: Vector2 = enemy.velocity - self.agent.velocity
             enemy_observation.extend([
-                enemy_relative_position.x,
-                enemy_relative_position.y,
-                enemy_relative_velocity.x,
-                enemy_relative_velocity.y,
+                enemy_relative_position.x / environment_width,
+                enemy_relative_position.y / environment_height,
+                enemy_relative_velocity.x / environment_width,
+                enemy_relative_velocity.y / environment_height,
                 1.0,
             ])
 
@@ -249,14 +250,14 @@ class GameEnvironment(Env):
         }
 
     def _get_observed_enemy_spawners(self) -> list[EnemySpawner]:
-        r: list[EnemySpawner] = self.game.enemy_spawner_pool.objects()
+        r: list[EnemySpawner] = self.game.enemy_spawner_pool.objects().copy()
         r.sort(key=lambda enemy_spawner: self.agent.position.distance_squared_to(enemy_spawner.position))
         if len(r) > self.hparams["max_enemy_spawner_obs"]:
             r = r[:self.hparams["max_enemy_spawner_obs"]]
         return r
 
     def _get_observed_enemies(self) -> list[Enemy]:
-        r: list[Enemy] = self.game.enemy_pool.objects()
+        r: list[Enemy] = self.game.enemy_pool.objects().copy()
         r.sort(key=lambda enemy: self.agent.position.distance_squared_to(enemy.position))
         if len(r) > self.hparams["max_enemy_obs"]:
             r = r[:self.hparams["max_enemy_obs"]]

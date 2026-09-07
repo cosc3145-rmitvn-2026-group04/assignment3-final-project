@@ -43,22 +43,33 @@ class ActionStyle(Enum):
     STYLE_B = 1
 
 
-ACTIONS: dict[ActionStyle, dict[int, Action]] = {
+COMPOSITE_ACTIONS: dict[ActionStyle, dict[int, list[Action]]] = {
     ActionStyle.STYLE_A: {
-        0: Action.NONE,
-        1: Action.SHOOT,
-        2: Action.THRUST_FORWARD,
-        3: Action.ROTATE_LEFT,
-        4: Action.ROTATE_RIGHT,
+        0: [Action.NONE],
+        1: [Action.SHOOT],
+        2: [Action.THRUST_FORWARD],
+        3: [Action.THRUST_FORWARD, Action.SHOOT],
+        4: [Action.ROTATE_LEFT],
+        5: [Action.ROTATE_LEFT, Action.SHOOT],
+        6: [Action.ROTATE_LEFT, Action.THRUST_FORWARD],
+        7: [Action.ROTATE_LEFT, Action.THRUST_FORWARD, Action.SHOOT],
+        8: [Action.ROTATE_RIGHT],
+        9: [Action.ROTATE_RIGHT, Action.SHOOT],
+        10: [Action.ROTATE_RIGHT, Action.THRUST_FORWARD],
+        11: [Action.ROTATE_RIGHT, Action.THRUST_FORWARD, Action.SHOOT],
     },
     ActionStyle.STYLE_B: {
-        0: Action.NONE,
-        1: Action.SHOOT,
-        2: Action.MOVE_UP,
-        3: Action.MOVE_LEFT,
-        4: Action.MOVE_DOWN,
-        5: Action.MOVE_RIGHT,
-    },
+        0: [Action.NONE],
+        1: [Action.SHOOT],
+        2: [Action.MOVE_UP],
+        3: [Action.MOVE_UP, Action.SHOOT],
+        4: [Action.MOVE_DOWN],
+        5: [Action.MOVE_DOWN, Action.SHOOT],
+        6: [Action.MOVE_LEFT],
+        7: [Action.MOVE_LEFT, Action.SHOOT],
+        8: [Action.MOVE_RIGHT],
+        9: [Action.MOVE_RIGHT, Action.SHOOT],
+    }
 }
 
 
@@ -167,7 +178,6 @@ class Player(KinematicObject):
                 self.invulnerable = False
 
     def apply_action(self, action: Action) -> None:
-        self.angular_velocity = 0.0
         match action:
             case Action.NONE:
                 return
