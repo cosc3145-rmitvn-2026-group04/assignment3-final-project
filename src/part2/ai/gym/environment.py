@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Any, SupportsFloat
 from collections.abc import Callable
-from statistics import mean
 import numpy as np
 from gymnasium import Env, spaces
 from pygame.math import Vector2
+from random import randint
 from part2.ai.gym.agent import PlayerControllerAgent
 from part2.ai.gym.config import get_hyperparameters
 from part2.game.player import Player, Action, ActionStyle, ACTIONS
@@ -96,6 +96,9 @@ class GameEnvironment(Env):
         super().reset(seed=seed, options=options)
         self.current_step = 0
         self.game.reset()
+        self.agent.position = (Vector2(
+                randint(int(self.agent.radius), int(WINDOW_WIDTH - self.agent.radius)), 
+                randint(int(self.agent.radius), int(WINDOW_HEIGHT - MAIN_HUD_HEIGHT - self.agent.radius))))
         return self._get_observation(), self._get_info()
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
