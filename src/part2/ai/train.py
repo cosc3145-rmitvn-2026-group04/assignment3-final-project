@@ -16,7 +16,7 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from part2.ai.gym.environment import make_game_environment_fn, GameEnvironment
+from part2.ai.gym.environment import make_train_game_environment_fn, GameEnvironment
 from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.config import (
@@ -214,7 +214,7 @@ def train(
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
         env_hyperparams = json.load(file)
     vec_env: SubprocVecEnv = SubprocVecEnv([
-        make_game_environment_fn(
+        make_train_game_environment_fn(
                 action_style=action_style,
                 phases=phases,
                 seed=seed + env_index,
