@@ -57,11 +57,13 @@ class GameEnvironment(Env):
         player_observation_vector_len: int = 8
 
         # Enemy spawner observation (normalized): [rel_x, rel_y, health, exist] for the closest "max_enemy_spawner_obs" enemy spawner.
-        # Enemy observation (normalized): [rel_x, rel_y, exist] for the closest "max_enemy_obs" enemies.
+        # Enemy observation (normalized): [rel_x, rel_y, rel_vel_x, rel_vel_y, exist] for the closest "max_enemy_obs" enemies.
         #
         # Note:
         # - rel_x and rel_y are the coordinates of the enemy spawner / enemy
         # relative to the agent.
+        # - rel_vel_x and rel_vel_y are the components of the enemy's velocity
+        # relative to the agent's velocity.
         # - If the number of closest enemy spawners / enemies is smaller
         # than the max observation ("max_enemy_spawner_obs" and
         # "max enemy_obs"), the extra empty space will have the exist component
@@ -69,7 +71,7 @@ class GameEnvironment(Env):
         # valid data, the exist component is set to 1.0 (True).
         enemies_observation_vector_len: int = (
             self.hparams["max_enemy_spawner_obs"] * 4
-            + self.hparams["max_enemy_obs"] * 3
+            + self.hparams["max_enemy_obs"] * 5
         )
 
         self.observation_space = spaces.Box(
@@ -186,7 +188,7 @@ class GameEnvironment(Env):
             (self.agent.rotation % 360.0) / 360.0 * 2.0 - 1.0,
             self.agent.health / self.agent.max_health * 2.0 - 1.0,
             1.0 if self.agent.shooting_enabled else -1.0,
-            1.0 if self.agent.invulnerable else -1.0
+            1.0 if self.agent.invulnerable else -1.0,
         ]
 
         enemy_observation: list = []
@@ -203,21 +205,24 @@ class GameEnvironment(Env):
                 enemy_spawner_relative_position.x,
                 enemy_spawner_relative_position.y,
                 enemy_spawner.health / enemy_spawner.max_health * 2.0 - 1.0,
-                1.0
+                1.0,
             ])
         observed_enemies: list[Enemy] = self._get_observed_enemies()
         enemy_index: int
         for enemy_index in range(self.hparams["max_enemy_obs"]):
             if enemy_index >= len(observed_enemies):
-                enemy_observation.extend([0.0, 0.0, -1.0])
+                enemy_observation.extend([0.0, 0.0, 0.0, 0.0, -1.0])
                 continue
 
             enemy: Enemy = observed_enemies[enemy_index]
             enemy_relative_position: Vector2 = enemy.position - self.agent.position
+            enemy_relative_velocity: Vector2 = enemy.velocity - self.agent.velocity
             enemy_observation.extend([
                 enemy_relative_position.x,
                 enemy_relative_position.y,
-                1.0
+                enemy_relative_velocity.x,
+                enemy_relative_velocity.y,
+                1.0,
             ])
 
         return np.array(agent_observation + enemy_observation, dtype=np.float32)
