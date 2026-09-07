@@ -4,7 +4,7 @@
         "n_steps": 2048,
         "batch_size": 64,
         "gamma": 0.99,
-        "ent_coef": 0.02
+        "ent_coef": 0.03
     },
     "DQN": {
         "policy_kwargs": {
