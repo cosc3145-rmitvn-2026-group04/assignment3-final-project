@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Any, SupportsFloat
 from collections.abc import Callable
+from random import randint, random
 import numpy as np
 from gymnasium import Env, spaces
 from pygame.math import Vector2
-from random import randint, random
 from part2.ai.gym.agent import PlayerControllerAgent
 from part2.ai.gym.config import get_hyperparameters
 from part2.game.player import Player, Action, ActionStyle, ACTIONS

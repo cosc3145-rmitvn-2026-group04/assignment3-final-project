@@ -29,20 +29,31 @@ def evaluate(
     rprint("[bold yellow][ MODE: EVALUATE ][/bold yellow]")
     print("Model: '%s'" % (input_model))
 
-    env: GameEnvironment = GameEnvironment(action_style=ActionStyle.STYLE_A, phases=phases)
-    observation: Any
-    total_reward: float = 0.0
-    terminated: bool
-    truncated: bool
-    info: dict[str, Any]
-    observation, info = env.reset()
-
     model_pkl: dict[str, Any]
     with open(input_model, "rb") as file:
         model_pkl = cloudpickle.load(file)
     model: Any = model_pkl["model"]
     model_algorithm_name: str = model_pkl["metadata"]["algorithm"]
     model_control_style_name: str = model_pkl["metadata"]["control_style"]
+
+    env: GameEnvironment
+    match model_control_style_name:
+        case "Control Style 1":
+            env = GameEnvironment(
+                    action_style=ActionStyle.STYLE_A,
+                    phases=phases)
+        case "Control Style 2":
+            env = GameEnvironment(
+                    action_style=ActionStyle.STYLE_B,
+                    phases=phases)
+        case _:
+            raise ValueError("Loaded model has unrecognized action style.")
+    observation: Any
+    total_reward: float = 0.0
+    terminated: bool
+    truncated: bool
+    info: dict[str, Any]
+    observation, info = env.reset()
     action: Any
     states: Any
 
