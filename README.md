@@ -117,7 +117,7 @@ For more information, please use the `-h`, `-help`, or `--help` flag.
 ```shell
 python -m src.part2.main -v1 -m play  # Play the game manually. CLI Log verbose level 1.
 python -m src.part2.main -v2 -m train -a DQN -c1 -n12 -d cpu  # Train a DQN agent for control style 1 using 12 parallel CPU threads. CLI Log verbose level 2.
-python -m src.part2.main -v3 -m evaluate -M models/part2/dqn.control_style_1.pkl  # Evaluate the model at 'models/part2/dqn.control_style_1.pkl'. CLI Log verbose level 3.
+python -m src.part2.main -v3 -m evaluate -M models/part2/dqn.control_style_1.pkl p2  # Evaluate the model at 'models/part2/dqn.control_style_1.pkl' starting from Phase 2 onward. CLI Log verbose level 3.
 ```
 
 #### Configuration files:
