@@ -1,4 +1,5 @@
 import sys
+import time
 from typing import Any
 from enum import Enum
 from pathlib import Path
@@ -76,6 +77,20 @@ class GameEnvironmentPhaseCallback(BaseCallback):
         return super()._on_step()
 
 
+class PPOLinearEntCoefDecayCallback(BaseCallback):
+    def __init__(self, initial_ent_coef: float, total_timesteps: int, verbose: int = 0):
+        super().__init__(verbose)
+        self.initial_ent_coef: float = initial_ent_coef
+        self.total_timesteps: float = total_timesteps
+
+    def _on_step(self) -> bool:
+        if isinstance(self.model, PPO):
+            progress_remaining: float = max(0.0, 1.0 - (self.num_timesteps / self.total_timesteps))
+            self.model.ent_coef = self.initial_ent_coef * progress_remaining
+            self.logger.record("train/ent_coef", self.model.ent_coef)
+        return super()._on_step()
+
+
 class EvalBestModelCallback(BaseCallback):
     def __init__(self,
             eval_model: Any,
@@ -143,20 +158,21 @@ class EvalBestModelCallback(BaseCallback):
 
 
 class CompactStdoutWriter(KVWriter):
-    def write(self, key_values: dict[str, Any], step: int = 0, *args, **kwargs) -> None:
-        log_dict = { "step": step, **key_values }
+    def write(self, key_values: dict[str, Any], *args, **kwargs) -> None:
+        log_dict: dict[str, Any] = {}
+
         key: str
         value: Any
-        for key, value in log_dict.items():
-            if (
-                type(value) in [
-                    np.float16,
-                    np.float32,
-                    np.float64,
-                ]
-            ):
-                log_dict[key] = float(value)
-        sys.stdout.write("TrainStats%s\n" % (json.dumps(log_dict)))
+        for key, value in key_values.items():
+            if isinstance(value, (dict, list)):
+                continue
+
+            if isinstance(value, np.generic):
+                log_dict[key] = value.item()
+            else:
+                log_dict[key] = value
+
+        sys.stdout.write("TrainStats%s\n" % json.dumps(log_dict))
         sys.stdout.flush()
 
     def close(self) -> None:
@@ -235,14 +251,25 @@ def train(
         rprint("[blue]-> Environment loaded.[/blue]")
     # ==========================
 
-    # ====== Model Config ======
-    logger: Logger = configure(str(TRAIN_LOG_DIR), ["csv", "tensorboard"])
+    # ====== Logger Config ======
+    train_log_subdir: Path = TRAIN_LOG_DIR / (
+        "%s.%s.%d.log" % (
+            algorithm_name_str.lower(),
+            action_style_filename_str,
+            int(time.time())
+        )
+    )
+    logger: Logger = configure(str(train_log_subdir), ["csv", "tensorboard"])
     if verbose > 1:
         logger.output_formats.append(CompactStdoutWriter())
+        rprint("[blue]-> Log output at: '%s'.[/blue]" % (str(train_log_subdir)))
+    # ==========================
 
+    # ====== Model Config ======
     model_hyperparams: dict[str, Any]
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
         model_hyperparams = json.load(file)
+
     model: BaseAlgorithm
     match algorithm:
         case LearningAlgorithmType.PPO:
@@ -258,6 +285,7 @@ def train(
                 print(json.dumps(model_hyperparams["PPO"], indent=2))
             elif verbose > 0:
                 rprint("[blue]-> PPO model initialized.[/blue]")
+
         case LearningAlgorithmType.DQN:
             model_class: type[BaseAlgorithm] = DQN
             model = DQN(
@@ -266,6 +294,7 @@ def train(
                     **model_hyperparams["DQN"],
                     verbose=verbose,
                     device=device)
+
             if verbose > 1:
                 rprint("[blue]-> DQN model initialized (config: '%s'):.[/blue]" % (str(MODEL_HYPERPARAMS_CONFIG_FILE)))
                 print(json.dumps(model_hyperparams["DQN"], indent=2))
@@ -297,6 +326,10 @@ def train(
     if verbose > 1:
         print("Tempfile: '%s'" % (str(best_model_temp_file_path)))
 
+    ppo_linear_ent_coef_decay_callback: PPOLinearEntCoefDecayCallback = PPOLinearEntCoefDecayCallback(
+            initial_ent_coef=model_hyperparams["PPO"]["ent_coef"],
+            total_timesteps=train_hyperparams["total_timesteps"],
+            verbose=verbose)
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
             eval_model=model,
             temp_file_path=best_model_temp_file_path,
@@ -314,6 +347,7 @@ def train(
             total_timesteps=train_hyperparams["total_timesteps"],
             callback=[
                 env_phase_callback,
+                ppo_linear_ent_coef_decay_callback,
                 eval_best_model_callback,
                 LogEveryNTimesteps(train_hyperparams["log_freq"]),
             ],

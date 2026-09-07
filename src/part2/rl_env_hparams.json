@@ -1,16 +1,16 @@
 {
     "max_enemy_spawner_obs": 2,
-    "max_enemy_obs": 5,
+    "max_enemy_obs": 12,
     "max_steps_episode": 5000,
-    "reward_step": -0.01,
+    "reward_step": 0.0001,
     "reward_agent_shoot": -0.001,
     "reward_agent_hurt": -10.0,
     "reward_enemy_spawner_hit": 10.0,
-    "reward_enemy_spawner_kill": 20.0,
+    "reward_enemy_spawner_kill": 50.0,
     "reward_enemy_kill": 2.0,
-    "reward_phase_win": 100.0,
-    "reward_phase_loss": -100.0,
-    "reward_episode_truncated": -100.0,
+    "reward_phase_win": 200.0,
+    "reward_phase_loss": -50.0,
+    "reward_episode_truncated": -50.0,
     "phase_progress_win_rate_threshold": 0.8,
     "phase_progress_win_rate_episode_memory": 50
 }
