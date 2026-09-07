@@ -4,7 +4,7 @@ from collections.abc import Callable
 from random import randint, random
 import numpy as np
 from gymnasium import Env, spaces
-from pygame.math import Vector2
+from pygame.math import Vector2, clamp
 from part2.ai.gym.agent import PlayerControllerAgent
 from part2.ai.gym.config import get_hyperparameters
 from part2.game.player import Player, Action, ActionStyle, ACTIONS
@@ -192,16 +192,11 @@ class GameEnvironment(Env):
         environment_width: float = float(WINDOW_WIDTH)
         environment_height: float = float(WINDOW_HEIGHT - MAIN_HUD_HEIGHT)
 
-        agent_velocity_normalized: Vector2 = (
-            self.agent.velocity.normalize()
-            if self.agent.velocity.length_squared() > 0.0
-            else Vector2(0, 0)
-        )
         agent_observation: list = [
             (self.agent.position.x / environment_width) * 2.0 - 1.0,
             (self.agent.position.y / environment_height) * 2.0 - 1.0,
-            agent_velocity_normalized.x,
-            agent_velocity_normalized.y,
+            clamp(self.agent.velocity.x / self.agent.speed, -1.0, 1.0),
+            clamp(self.agent.velocity.y / self.agent.speed, -1.0, 1.0),
             (self.agent.rotation % 360.0) / 360.0 * 2.0 - 1.0,
             self.agent.health / self.agent.max_health * 2.0 - 1.0,
             1.0 if self.agent.shooting_enabled else -1.0,
@@ -219,8 +214,8 @@ class GameEnvironment(Env):
             enemy_spawner: EnemySpawner = observed_enemy_spawers[enemy_spawner_index]
             enemy_spawner_relative_position: Vector2 = enemy_spawner.position - self.agent.position
             enemy_observation.extend([
-                enemy_spawner_relative_position.x,
-                enemy_spawner_relative_position.y,
+                enemy_spawner_relative_position.x / environment_width,
+                enemy_spawner_relative_position.y / environment_height,
                 enemy_spawner.health / enemy_spawner.max_health * 2.0 - 1.0,
                 1.0,
             ])
