@@ -30,6 +30,7 @@ class EvaluationAuxiliaryHUD(UserInterface):
             show_instructions: bool,
             model_algorithm_name: str,
             model_control_style_name: str,
+            current_phase_reward: float,
             cumulative_reward: float,
             *args, **kwargs
     ) -> None:
@@ -47,25 +48,28 @@ class EvaluationAuxiliaryHUD(UserInterface):
                 COLOR_EVAL_AUX_HUD_HELP_FOREGROUND,
                 int(self.fonts["small"].get_linesize() * 1.15))
 
-        eval_info_reward_text: str = "Reward: %.2f" %  (cumulative_reward)
+        eval_info_reward_text: str = "Cumulative reward: %.2f\nPhase reward: %.2f" % (
+            cumulative_reward,
+            current_phase_reward,
+        )
         blit_lines(
                 self.surface,
                 Vector2(WINDOW_WIDTH - 10, 10),
                 eval_info_reward_text,
                 self.fonts["small"],
                 COLOR_EVAL_AUX_HUD_INFO_FOREGROUND,
-                int(self.fonts["small"].get_linesize() * 1.15),
+                int(self.fonts["small"].get_linesize()),
                 align=TextAlignment.RIGHT)
 
-        eval_info_model_metadata_text: str = "%s\nModel: %s" % (
-                model_control_style_name,
-                model_algorithm_name
+        eval_info_model_metadata_text: str = "Model: %s\n%s" % (
+            model_algorithm_name,
+            model_control_style_name,
         )
         blit_lines(
                 self.surface,
-                Vector2(WINDOW_WIDTH - 10, 28),
+                Vector2(10, WINDOW_HEIGHT - MAIN_HUD_HEIGHT - 32),
                 eval_info_model_metadata_text,
                 self.fonts["xsmall"],
                 COLOR_EVAL_AUX_HUD_INFO_FOREGROUND_DIM,
                 int(self.fonts["xsmall"].get_linesize()),
-                align=TextAlignment.RIGHT)
+                align=TextAlignment.LEFT)

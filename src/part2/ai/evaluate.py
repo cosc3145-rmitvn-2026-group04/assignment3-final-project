@@ -74,6 +74,7 @@ def evaluate(
     hud_show_help: bool = False
     for phase_index in range(start_phase, len(phases["phases"])):
         env.set_phase(phase_index)
+        current_phase_reward: float = 0.0
 
         main_hud: MainHUD = MainHUD(fonts, env.game)
         eval_aux_hud: EvaluationAuxiliaryHUD = EvaluationAuxiliaryHUD(fonts)
@@ -111,6 +112,7 @@ def evaluate(
                     observation=observation,
                     deterministic=True)
             observation, reward, terminated, truncated, info = env.step(action)
+            current_phase_reward += float(reward)
             total_reward += float(reward)
 
             main_hud.update(delta, events)
@@ -120,6 +122,7 @@ def evaluate(
                     hud_show_help,
                     model_algorithm_name,
                     model_control_style_name,
+                    current_phase_reward,
                     total_reward)
 
             if (
@@ -128,8 +131,9 @@ def evaluate(
                 and phase_index < len(phases["phases"]) - 1
             ):
                 if verbose > 0:
-                    rprint("[cyan]-> Phase %s. Cumulative reward: %.2f[/cyan]" % (
+                    rprint("[cyan]-> Phase %s. Phase reward: %.2f | Cumulative reward: %.2f[/cyan]" % (
                         "won" if info["game_status"] == GameStatus.GAME_WON else "lost",
+                        current_phase_reward,
                         total_reward
                     ))
                 break
