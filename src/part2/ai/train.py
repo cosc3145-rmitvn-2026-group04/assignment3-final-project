@@ -8,6 +8,7 @@ import json
 import psutil
 import cloudpickle
 from rich import print as rprint
+from random import Random
 import numpy as np
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
@@ -18,12 +19,16 @@ from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from part2.ai.gym.environment import make_train_game_environment_fn, GameEnvironment
-from part2.game.player import ActionStyle
+from part2.game.player import PLAYER_RADIUS, ActionStyle
+from part2.game.enemy import ENEMY_SPAWNER_RADIUS
 from part2.game.game import GameStatus
 from part2.config import (
         MODELS_DIR,
         MODELS_TRAIN_TEMP_DIR,
         TRAIN_LOG_DIR,
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        MAIN_HUD_HEIGHT,
         FPS)
 
 ENV_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_env_hparams.json"
@@ -61,7 +66,7 @@ class GameEnvironmentPhaseCallback(BaseCallback):
             if win_rate >= self.win_rate_threshold:
                 self.current_phase_index: int = self.training_env.get_attr("current_phase_index")[0]
                 next_phase_index: int = self.current_phase_index + 1
-                phases_count: int = len(self.training_env.get_attr("phases")[0]["phases"])
+                phases_count: int = len(self.training_env.get_attr("phases")[0])
                 if next_phase_index < phases_count - 1:
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
@@ -184,9 +189,76 @@ class CompactStdoutWriter(KVWriter):
         pass
 
 
+def generate_curriculum_phases(
+        n_phases: int,
+        enemy_spawner_count_range: tuple[int, int],
+        enemy_spawner_health_range: tuple[int, int],
+        enemy_spawner_spawn_amount_range: tuple[int, int],
+        enemy_spawner_spawn_delay_range: tuple[float, float],
+        enemy_spawner_spawn_delay_max_deviation: float,
+        enemy_spawner_activation_delay_range: tuple[float, float],
+        enemy_spawner_activation_delay_max_deviation: float,
+        max_enemy_count_range: tuple[int, int],
+        seed: int = 0
+) -> list[dict[str, Any]]:
+    """
+    Returns a list of pseudo-randomly generated (`seed` provided) sequential
+    phase layouts for curriculum training. Ramps difficulty linearly over
+    `n_phases` using the provided configuration kwargs.
+    """
+    def _lerp(v0: float, v1: float, t: float) -> float:
+        return (1 - t) * v0 + t * v1
+
+    environment_width: int = WINDOW_WIDTH
+    environment_height: int = WINDOW_HEIGHT - MAIN_HUD_HEIGHT
+
+    rng: Random = Random(seed)
+    phases: list[dict[str, Any]] = []
+    for i in range(n_phases):
+        t: float = i / max(1, n_phases - 1)
+        phase: dict[str, Any] = {}
+
+        phase["phase_name"] = "%d" % (i)
+        phase["player_position"] = {
+            "x": rng.randrange(int(PLAYER_RADIUS), environment_width - int(PLAYER_RADIUS)),
+            "y": rng.randrange(int(PLAYER_RADIUS), environment_height - int(PLAYER_RADIUS)),
+        }
+
+        enemy_spawner_count: int = round(_lerp(*(*enemy_spawner_count_range, t)))
+        enemy_spawner_health: int = round(_lerp(*(*enemy_spawner_health_range, t)))
+        enemy_spawner_spawn_amount: int = round(_lerp(*(*enemy_spawner_spawn_amount_range, t)))
+        phase["enemy_spawners"] = []
+        for _ in range(enemy_spawner_count):
+            enemy_spawner: dict[str, Any] = {
+                "position": {
+                    "x": rng.randrange(int(ENEMY_SPAWNER_RADIUS), environment_width - int(ENEMY_SPAWNER_RADIUS)),
+                    "y": rng.randrange(int(ENEMY_SPAWNER_RADIUS), environment_height - int(ENEMY_SPAWNER_RADIUS)),
+                },
+                "health": enemy_spawner_health,
+                "spawn_amount": enemy_spawner_spawn_amount,
+                "spawn_delay": max(
+                        0.0,
+                        (
+                            round(_lerp(*(*enemy_spawner_spawn_delay_range, t)), 1)
+                            + rng.uniform(-enemy_spawner_spawn_delay_max_deviation, enemy_spawner_spawn_delay_max_deviation)
+                        )),
+                "activation_delay": max(
+                        0.0,
+                        (
+                            round(_lerp(*(*enemy_spawner_activation_delay_range, t)), 1))
+                            + rng.uniform(-enemy_spawner_activation_delay_max_deviation, enemy_spawner_activation_delay_max_deviation)
+                        ),
+            }
+            phase["enemy_spawners"].append(enemy_spawner)
+
+        phase["max_enemies"] = _lerp(*(*max_enemy_count_range, t))
+
+        phases.append(phase)
+    return phases
+
+
 def train(
         action_style: ActionStyle,
-        phases: list[dict[str, Any]],
         algorithm: LearningAlgorithmType,
         seed: int = 0,
         n_threads: int = 1,
@@ -196,7 +268,7 @@ def train(
 ) -> None:
     rprint("[bold yellow][ MODE: TRAIN ][/bold yellow]")
 
-    # Verify directories.
+    # ====== Bootstraping ======
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_TRAIN_TEMP_DIR.mkdir(parents=True, exist_ok=True)
     TRAIN_LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -229,15 +301,26 @@ def train(
         else MODELS_DIR / ("%s.%s.pkl" % (algorithm_name_str.lower(), action_style_filename_str))
     )
 
-    # === Environment Config ===
-    # Include support for multi-process parallel training.
     env_hyperparams: dict[str, Any]
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
         env_hyperparams = json.load(file)
+    model_hyperparams: dict[str, Any]
+    with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
+        model_hyperparams = json.load(file)
+    train_hyperparams: dict[str, Any]
+    with open(TRAIN_HYPERPARAMS_CONFIG_FILE, "r") as file:
+        train_hyperparams = json.load(file)
+    # ==========================
+
+    # === Environment Config ===
+    # Include support for multi-process parallel training.
+    train_curriculum_phases: list[dict[str, Any]] = generate_curriculum_phases(
+            **train_hyperparams["train_curriculum"],
+            seed=seed)
     vec_env: SubprocVecEnv = SubprocVecEnv([
         make_train_game_environment_fn(
                 action_style=action_style,
-                phases=phases,
+                phases=train_curriculum_phases,
                 seed=seed + env_index,
                 max_steps=env_hyperparams["max_steps_episode"])
         for env_index in range(n_threads)
@@ -271,10 +354,6 @@ def train(
     # ==========================
 
     # ====== Model Config ======
-    model_hyperparams: dict[str, Any]
-    with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
-        model_hyperparams = json.load(file)
-
     model: BaseAlgorithm
     match algorithm:
         case LearningAlgorithmType.PPO:
@@ -309,10 +388,6 @@ def train(
     # ==========================
 
     # ======== Training ========
-    train_hyperparams: dict[str, Any]
-    with open(TRAIN_HYPERPARAMS_CONFIG_FILE, "r") as file:
-        train_hyperparams = json.load(file)
-
     if verbose > 1:
         rprint("[green]-> Training started on %d thread(s) (config: '%s'):.[/green]" % (
             n_threads,
@@ -335,12 +410,16 @@ def train(
             initial_ent_coef=model_hyperparams["PPO"]["ent_coef"],
             total_timesteps=train_hyperparams["total_timesteps"],
             verbose=verbose)
+
+    eval_curriculum_phases: list[dict[str, Any]] = generate_curriculum_phases(
+            **train_hyperparams["eval_curriculum"],
+            seed=seed)
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
             eval_model=model,
             temp_file_path=best_model_temp_file_path,
             eval_env=Monitor(GameEnvironment(
                     action_style=action_style,
-                    phases=phases,
+                    phases=eval_curriculum_phases,
                     random_agent_spawn_position=True,
                     random_agent_spawn_rotation=True,
                     max_steps=env_hyperparams["max_steps_episode"])),

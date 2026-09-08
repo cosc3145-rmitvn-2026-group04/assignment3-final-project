@@ -21,6 +21,9 @@ from part2.game.config import (
         PLAYER_SHOOTING_COOLDOWN,
         PLAYER_BULLET_SPEED)
 
+PLAYER_RADIUS: float = 12.0
+PLAYER_BULLET_RADIUS: float = 4.0
+
 
 class Action(Enum):
     NONE = 0
@@ -134,8 +137,8 @@ class Player(KinematicObject):
     ):
         kwargs["position"] = position if position else Vector2(0, 0)
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player.png")
-        kwargs["radius"]=12.0
-        kwargs["offset"]=Vector2(0, 4)
+        kwargs["radius"] = PLAYER_RADIUS
+        kwargs["offset"] = Vector2(0, 4)
         super().__init__(**kwargs)
         self.controller: PlayerController = controller
         self.health: int = health
@@ -240,7 +243,7 @@ class Player(KinematicObject):
 class PlayerBullet(KinematicObject):
     def __init__(self, speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_player_bullet.png")
-        kwargs["radius"] = 4.0
+        kwargs["radius"] = PLAYER_BULLET_RADIUS
         kwargs["offset"] = Vector2(0, -4)
         super().__init__(**kwargs)
         self.speed: float = speed

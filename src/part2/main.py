@@ -105,7 +105,6 @@ def main() -> None:
                     raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
             train(
                     action_style=action_style,
-                    phases=phases,
                     algorithm=algorithm,
                     seed=args.seed,
                     n_threads=args.n_threads,

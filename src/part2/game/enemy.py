@@ -19,6 +19,9 @@ from part2.game.config import (
         ENEMY_SEPARATION_ACTIVATE_RADIUS,
         ENEMY_SEPARATION_FORCE_WEIGHT)
 
+ENEMY_SPAWNER_RADIUS: float = 30.0
+ENEMY_RADIUS: float = 10.0
+
 
 class EnemySpawner(SpatialObject):
     def __init__(self,
@@ -29,7 +32,7 @@ class EnemySpawner(SpatialObject):
             **kwargs
     ):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy_spawner.png")
-        kwargs["radius"] = 30.0
+        kwargs["radius"] = ENEMY_SPAWNER_RADIUS
         super().__init__(**kwargs)
         self.health: int = health
         self.max_health: int = health
@@ -127,7 +130,7 @@ class EnemySpawnerPool(Group):
 class Enemy(KinematicObject):
     def __init__(self, speed: float, **kwargs):
         kwargs["image"] = pygame.image.load(ASSET_DIR / "sprite_enemy.png")
-        kwargs["radius"] = 10.0
+        kwargs["radius"] = ENEMY_RADIUS
         super().__init__(**kwargs)
         self.speed: float = speed
 

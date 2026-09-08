@@ -122,10 +122,10 @@ python -m src.part2.main -v3 -m evaluate -M models/part2/dqn.control_style_1.pkl
 
 #### Configuration files:
 
-- `src/part2/game_phases.json`: Contains the layout and data for all game phases of this module.
+- `src/part2/game_phases.json`: Contains the layout and data for the game phases available in `play` and `evaluate` run modes. `train` mode uses procedurally generated data instead. See `rl_train_hparams.json` below for detail.
 - `src/part2/rl_env_hparams.json`: Contains the hyperparameters for the RL game environment of this module, including agent sensor capability and reward function tunings.
 - `src/part2/rl_model_hparams.json`: Contains the hyperparameters for RL algorithms available in this module.
-- `src/part2/rl_train_hparams.json`: Contains the hyperparameters for the RL training procedure of this module.
+- `src/part2/rl_train_hparams.json`: Contains the hyperparameters for the RL training procedure of this module, including configuration for procedural train/test curriculum generation.
 
 #### Outputs:
 
