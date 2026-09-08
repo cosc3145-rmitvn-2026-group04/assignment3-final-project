@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import Any
+from typing import Any, cast
 from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
@@ -130,19 +130,31 @@ class EvalBestModelCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.eval_freq == 0:
-            mean_rew_ep, std_rew_ep = evaluate_policy(
-                    model=self.eval_model,
-                    env=self.eval_env,
-                    n_eval_episodes=self.n_eval_episodes,
-                    deterministic=True)
+            if not isinstance(self.eval_env.unwrapped, GameEnvironment):
+                raise TypeError("`self.eval_env.unwrapped` must be of type GameEnvironment.")
+
+            unwrapped_eval_env: GameEnvironment = self.eval_env.unwrapped
+            mean_rew_eps: list[float] = []
+            phase_index: int
+            for phase_index in range(len(unwrapped_eval_env.phases)):
+                unwrapped_eval_env.set_phase(phase_index)
+                phase_mean_rew_ep, _ = evaluate_policy(
+                        model=self.eval_model,
+                        env=self.eval_env,
+                        n_eval_episodes=self.n_eval_episodes,
+                        deterministic=True)
+                mean_rew_eps.append(cast(float, phase_mean_rew_ep))
+
+            mean_rew_ep: float = float(np.mean(mean_rew_eps))
+            std_rew_ep: float = float(np.std(mean_rew_eps))
 
             self.logger.record("eval/mean_rew_ep", mean_rew_ep)
             self.logger.record("eval/std_rew_ep", std_rew_ep)
 
-            if mean_rew_ep > self.best_mean_rew_ep: # type: ignore pyright: ignore[reportAttributeAccessIssue]
+            if mean_rew_ep > self.best_mean_rew_ep:
                 self.best_model_at_step = self.num_timesteps
-                self.best_mean_rew_ep = mean_rew_ep # type: ignore pyright: ignore[reportAttributeAccessIssue]
-                self.best_std_rew_ep = std_rew_ep  # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.best_mean_rew_ep = mean_rew_ep
+                self.best_std_rew_ep = std_rew_ep
                 self.eval_model.save(self.best_model_temp_file_path)
 
             self.logger.record("eval/best_model_at_step", self.best_model_at_step)
