@@ -15,7 +15,7 @@ from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
 def make_train_game_environment_fn(
         action_style: ActionStyle,
-        phases: dict[str, Any],
+        phases: list[dict[str, Any]],
         seed: int | None = None,
         max_steps: int = 0,
 ) -> Callable:
@@ -41,7 +41,7 @@ class GameEnvironment(Env):
 
     def __init__(self,
             action_style: ActionStyle,
-            phases: dict[str, Any],
+            phases: list[dict[str, Any]],
             random_agent_spawn_position: bool = False,
             random_agent_spawn_rotation: bool = False,
             max_steps: int = 0
@@ -53,7 +53,7 @@ class GameEnvironment(Env):
         self.max_steps: int = max_steps
         self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
-        self.phases: dict[str, Any] = phases
+        self.phases: list[dict[str, Any]] = phases
         self.random_agent_spawn_position: bool = random_agent_spawn_position
         self.random_agent_spawn_rotation: bool = random_agent_spawn_rotation
         self.set_phase(0)
@@ -92,10 +92,10 @@ class GameEnvironment(Env):
         self._composite_actions: dict[int, list[Action]] = COMPOSITE_ACTIONS[action_style]
 
     def set_phase(self, phase_index: int) -> None:
-        if not 0 <= phase_index < len(self.phases["phases"]):
+        if not 0 <= phase_index < len(self.phases):
             raise ValueError("`phase_index` out of bound.")
         self.current_phase_index = phase_index
-        self.game = Game(self.agent, self.phases["phases"][self.current_phase_index])
+        self.game = Game(self.agent, self.phases[self.current_phase_index])
         if self.random_agent_spawn_position:
             self._randomize_agent_spawn_position()
         if self.random_agent_spawn_rotation:

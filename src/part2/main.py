@@ -78,7 +78,7 @@ def main() -> None:
     )
     args: Namespace = arg_parser.parse_args()
 
-    phases: dict[str, Any] = get_phases()
+    phases: list[dict[str, Any]] = get_phases()
     match args.mode:
         case "train":
             action_style: ActionStyle
@@ -126,7 +126,7 @@ def main() -> None:
                     input_model=model_path,
                     verbose=args.verbose)
         case "play":
-            if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
+            if args.start_phase < 0 or args.start_phase > len(phases) - 1:
                 raise RuntimeError("Invalid start phase specified.")
             play(phases=phases, start_phase=args.start_phase, verbose=args.verbose)
 

@@ -186,7 +186,7 @@ class CompactStdoutWriter(KVWriter):
 
 def train(
         action_style: ActionStyle,
-        phases: dict[str, Any],
+        phases: list[dict[str, Any]],
         algorithm: LearningAlgorithmType,
         seed: int = 0,
         n_threads: int = 1,

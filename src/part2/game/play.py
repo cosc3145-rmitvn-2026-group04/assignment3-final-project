@@ -20,7 +20,7 @@ from part2.config import (
         COLOR_BACKGROUND)
 
 
-def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None:
+def play(phases: list[dict[str, Any]], start_phase: int = 0, verbose: int = 0) -> None:
     rprint("[bold yellow][ MODE: PLAY ][/bold yellow]")
 
     pygame.init()
@@ -38,10 +38,10 @@ def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None
 
     phase_index: int
     hud_show_help: bool = False
-    for phase_index in range(start_phase, len(phases["phases"])):
+    for phase_index in range(start_phase, len(phases)):
         player: Player = Player(controller=PlayerControllerInputStyleA())
         player.controller.attach_player(player)
-        game: Game = Game(player, phases["phases"][phase_index])
+        game: Game = Game(player, phases[phase_index])
 
         main_hud: MainHUD = MainHUD(fonts, game)
         help_hud: HelpHUD = HelpHUD(fonts)
@@ -100,14 +100,14 @@ def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None
                     match game.status:
                         case GameStatus.GAME_WON:
                             rprint("[cyan]-> Phase %s won.[/cyan]" % (
-                                phases["phases"][phase_index]["phase_name"]
+                                phases[phase_index]["phase_name"]
                             ))
                         case GameStatus.GAME_LOST if not verbose_phase_lost_printed:
                             rprint("[cyan]-> Phase %s lost. Press [R] to restart.[/cyan]" % (
-                                phases["phases"][phase_index]["phase_name"]
+                                phases[phase_index]["phase_name"]
                             ))
                             verbose_phase_lost_printed = True
-                if game.status == GameStatus.GAME_WON and phase_index < len(phases["phases"]) - 1:
+                if game.status == GameStatus.GAME_WON and phase_index < len(phases) - 1:
                     break
             # ==========================
 

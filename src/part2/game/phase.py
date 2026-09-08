@@ -5,6 +5,6 @@ import json
 PHASES_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "game_phases.json"
 
 
-def get_phases() -> dict[str, Any]:
+def get_phases() -> list[dict[str, Any]]:
     with open(PHASES_CONFIG_FILE, "r") as file:
         return json.load(file)

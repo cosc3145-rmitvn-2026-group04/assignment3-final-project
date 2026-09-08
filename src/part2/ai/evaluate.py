@@ -21,7 +21,7 @@ from part2.config import (
 
 
 def evaluate(
-        phases: dict[str, Any],
+        phases: list[dict[str, Any]],
         start_phase: int,
         input_model: Path,
         verbose: int = 0
@@ -72,7 +72,7 @@ def evaluate(
 
     phase_index: int
     hud_show_help: bool = False
-    for phase_index in range(start_phase, len(phases["phases"])):
+    for phase_index in range(start_phase, len(phases)):
         env.set_phase(phase_index)
         current_phase_reward: float = 0.0
 
@@ -128,7 +128,7 @@ def evaluate(
             if (
                 terminated or truncated
                 and info["game_status"] == GameStatus.GAME_WON
-                and phase_index < len(phases["phases"]) - 1
+                and phase_index < len(phases) - 1
             ):
                 if verbose > 0:
                     rprint("[cyan]-> Phase %s. Phase reward: %.2f | Cumulative reward: %.2f[/cyan]" % (
