@@ -10,10 +10,10 @@ EPSILON_START = 1.0
 EPSILON_END = 0.05
 EPSILON_DECAY_FRACTION = 1.0
 RANDOM_SEED = 2026
+MONSTER_MOVE_PROBABILITY = 0.4
 
 
-# Level 1 needs more stable SARSA updates than the larger Level 2 state space.
-# Values not listed here inherit the defaults above.
+# Per-level values override the defaults above only where needed.
 LEVEL_TRAINING_OVERRIDES = {
     1: {
         "episodes": 20_000,
@@ -21,10 +21,23 @@ LEVEL_TRAINING_OVERRIDES = {
         "gamma": 0.95,
         "seed": 8101,
     },
+    4: {
+        "episodes": 20_000,
+        "max_steps": 400,
+        "epsilon_decay_fraction": 0.8,
+    },
 }
 
 
-def get_training_config(level_id):
+LEVEL_ALGORITHM_TRAINING_OVERRIDES = {
+    (4, "sarsa"): {
+        "alpha": 0.1,
+        "gamma": 0.95,
+    },
+}
+
+
+def get_training_config(level_id, algo_name=None):
     """Return a complete training configuration for one level."""
     training_config = {
         "episodes": EPISODES,
@@ -37,4 +50,10 @@ def get_training_config(level_id):
         "seed": RANDOM_SEED,
     }
     training_config.update(LEVEL_TRAINING_OVERRIDES.get(level_id, {}))
+    training_config.update(
+        LEVEL_ALGORITHM_TRAINING_OVERRIDES.get(
+            (level_id, algo_name),
+            {},
+        )
+    )
     return training_config

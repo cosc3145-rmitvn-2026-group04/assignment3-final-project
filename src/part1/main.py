@@ -6,7 +6,13 @@ import pygame
 
 from src.part1.game.config import get_training_config
 from src.part1.game.gridworld import GridWorld
-from src.part1.game.levels import LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3
+from src.part1.game.levels import (
+    LEVEL_0,
+    LEVEL_1,
+    LEVEL_2,
+    LEVEL_3,
+    LEVEL_4,
+)
 from src.part1.ai.q_learning import QLearningAgent
 from src.part1.ai.SARSA import SARSAAgent
 from src.part1.runner import run_interactive, run_training
@@ -16,6 +22,7 @@ LEVEL_CONFIG = {
     1: {"layout": LEVEL_1, "default_algo": "sarsa"},
     2: {"layout": LEVEL_2, "default_algo": "q_learning"},
     3: {"layout": LEVEL_3, "default_algo": "sarsa"},
+    4: {"layout": LEVEL_4, "default_algo": "q_learning"},
 }
 
 AGENT_CLASSES = {
@@ -70,8 +77,8 @@ def parse_arguments():
 def main():
     arguments = parse_arguments()
     config = LEVEL_CONFIG[arguments.level]
-    training_config = get_training_config(arguments.level)
     algo_name = arguments.algo or config["default_algo"]
+    training_config = get_training_config(arguments.level, algo_name)
     agent_class = AGENT_CLASSES[algo_name]
     random_seed = (
         arguments.seed
