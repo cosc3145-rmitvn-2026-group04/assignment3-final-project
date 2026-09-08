@@ -71,7 +71,7 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
                     if self.verbose > 2:
-                        rprint("[green]-> Win rate %.2f/%.2f (last %d eps) current Phase (%d). Progress to next Phase (%d).[/green]" % (
+                        rprint("[green]-> Win rate %.2f/%.2f (last %d eps) current training phase (%d). Progress to next training phase (%d).[/green]" % (
                             win_rate,
                             self.win_rate_threshold,
                             self.n_episodes,
@@ -329,7 +329,10 @@ def train(
     with open(train_curriculum_datadump_file, "w", encoding="utf-8") as file:
         json.dump(train_curriculum_phases, file, indent=4)
     if verbose > 2:
-        print("Train curriculum generated. Datadump at '%s'." % (str(train_curriculum_datadump_file)))
+        print("Train curriculum generated (%d phases). Datadump at '%s'." % (
+            train_hyperparams["train_curriculum"]["n_phases"],
+            str(train_curriculum_datadump_file)
+        ))
 
     vec_env: SubprocVecEnv = SubprocVecEnv([
         make_train_game_environment_fn(
@@ -425,7 +428,10 @@ def train(
     with open(eval_curriculum_datadump_file, "w", encoding="utf-8") as file:
         json.dump(eval_curriculum_phases, file, indent=4)
     if verbose > 2:
-        print("Eval curriculum generated. Datadump at '%s'." % (str(eval_curriculum_datadump_file)))
+        print("Eval curriculum generated (%d phases). Datadump at '%s'." % (
+            train_hyperparams["eval_curriculum"]["n_phases"],
+            str(eval_curriculum_datadump_file)
+        ))
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
             eval_model=model,
             temp_file_path=best_model_temp_file_path,
