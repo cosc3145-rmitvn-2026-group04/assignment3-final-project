@@ -356,7 +356,7 @@ def train(
     rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
         print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
-        print("Best model at step: %.2f" % (eval_best_model_callback.best_model_step))
+        print("Best model at step: %d" % (eval_best_model_callback.best_model_step))
         print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_reward))
         print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_reward))
     # ==========================

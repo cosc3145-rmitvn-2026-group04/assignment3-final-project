@@ -99,7 +99,7 @@ def main() -> None:
                     raise ValueError("Unrecognized RL algorithm.")
             model_path: Path = args.model_path
             if model_path:
-                if model_path.suffix != ".zip":
+                if model_path.suffix != ".pkl":
                     raise ValueError("Output model must be a .pkl file.")
                 if not model_path.resolve().parent.exists():
                     raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
