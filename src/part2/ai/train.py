@@ -300,6 +300,14 @@ def train(
         output_model if output_model
         else MODELS_DIR / ("%s.%s.pkl" % (algorithm_name_str.lower(), action_style_filename_str))
     )
+    train_log_subdir: Path = TRAIN_LOG_DIR / (
+        "%s.%s.%d.log" % (
+            algorithm_name_str.lower(),
+            action_style_filename_str,
+            int(time.time())
+        )
+    )
+    train_log_subdir.mkdir(parents=True, exist_ok=True)
 
     env_hyperparams: dict[str, Any]
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
@@ -317,6 +325,12 @@ def train(
     train_curriculum_phases: list[dict[str, Any]] = generate_curriculum_phases(
             **train_hyperparams["train_curriculum"],
             seed=seed)
+    train_curriculum_datadump_file: Path = train_log_subdir / "train_curriculum.json"
+    with open(train_curriculum_datadump_file, "w", encoding="utf-8") as file:
+        json.dump(train_curriculum_phases, file, indent=4)
+    if verbose > 2:
+        print("Train curriculum generated. Datadump at '%s'." % (str(train_curriculum_datadump_file)))
+
     vec_env: SubprocVecEnv = SubprocVecEnv([
         make_train_game_environment_fn(
                 action_style=action_style,
@@ -340,13 +354,6 @@ def train(
     # ==========================
 
     # ====== Logger Config ======
-    train_log_subdir: Path = TRAIN_LOG_DIR / (
-        "%s.%s.%d.log" % (
-            algorithm_name_str.lower(),
-            action_style_filename_str,
-            int(time.time())
-        )
-    )
     logger: Logger = configure(str(train_log_subdir), ["csv", "tensorboard"])
     if verbose > 1:
         logger.output_formats.append(CompactStdoutWriter())
@@ -414,6 +421,11 @@ def train(
     eval_curriculum_phases: list[dict[str, Any]] = generate_curriculum_phases(
             **train_hyperparams["eval_curriculum"],
             seed=seed)
+    eval_curriculum_datadump_file: Path = train_log_subdir / "eval_curriculum.json"
+    with open(eval_curriculum_datadump_file, "w", encoding="utf-8") as file:
+        json.dump(eval_curriculum_phases, file, indent=4)
+    if verbose > 2:
+        print("Eval curriculum generated. Datadump at '%s'." % (str(eval_curriculum_datadump_file)))
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
             eval_model=model,
             temp_file_path=best_model_temp_file_path,
