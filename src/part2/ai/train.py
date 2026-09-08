@@ -101,19 +101,23 @@ class EvalBestModelCallback(BaseCallback):
             verbose: int = 0
     ):
         """
-        Keeps track of the best model in `self.best_model`. Evaluation happens
-        every `eval_freq` calls for `n_eval_episodes`.
+        Keeps track of the best model and saves it in a temporary
+        `temp_file_path`. Evaluation happens every `eval_freq` calls for
+        `n_eval_episodes`.
+
+        The best model is the one with the highest current mean reward per
+        episode (logged as `mean_rew_ep`) after evaluation of
+        `n_eval_episodes`.
         """
         super().__init__(verbose)
         self.eval_model: Any = eval_model
         self.best_model_temp_file_path: Path = temp_file_path
-        self.best_model: Any = None
         self.eval_env: Monitor = eval_env
         self.eval_freq: int = eval_freq
         self.n_eval_episodes: int = n_eval_episodes
-        self.best_model_step: int = 0
-        self.best_mean_reward: float = float("-inf")
-        self.best_std_reward: float = float("inf")
+        self.best_model_at_step: int = 0
+        self.best_mean_rew_ep: float = float("-inf")
+        self.best_std_rew_ep: float = float("inf")
 
     def _init_callback(self) -> None:
         self.eval_model.save(self.best_model_temp_file_path)
@@ -121,34 +125,35 @@ class EvalBestModelCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.eval_freq == 0:
-            mean_reward, std_reward = evaluate_policy(
+            mean_rew_ep, std_rew_ep = evaluate_policy(
                     model=self.eval_model,
                     env=self.eval_env,
                     n_eval_episodes=self.n_eval_episodes,
                     deterministic=True)
 
-            self.logger.record("eval/mean_reward", mean_reward)
-            self.logger.record("eval/std_reward", std_reward)
+            self.logger.record("eval/mean_rew_ep", mean_rew_ep)
+            self.logger.record("eval/std_rew_ep", std_rew_ep)
 
-            if mean_reward > self.best_mean_reward: # type: ignore pyright: ignore[reportAttributeAccessIssue]
-                self.best_model_step = self.num_timesteps
-                self.best_mean_reward = mean_reward # type: ignore pyright: ignore[reportAttributeAccessIssue]
-                self.best_std_reward = std_reward  # type: ignore pyright: ignore[reportAttributeAccessIssue]
+            if mean_rew_ep > self.best_mean_rew_ep: # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.best_model_at_step = self.num_timesteps
+                self.best_mean_rew_ep = mean_rew_ep # type: ignore pyright: ignore[reportAttributeAccessIssue]
+                self.best_std_rew_ep = std_rew_ep  # type: ignore pyright: ignore[reportAttributeAccessIssue]
                 self.eval_model.save(self.best_model_temp_file_path)
 
-            self.logger.record("eval/best_model_step", self.best_model_step)
-            self.logger.record("eval/best_mean_reward", self.best_mean_reward)
+            self.logger.record("eval/best_model_at_step", self.best_model_at_step)
+            self.logger.record("eval/best_mean_rew_ep", self.best_mean_rew_ep)
+            self.logger.record("eval/best_std_rew_ep", self.best_std_rew_ep)
 
             self.logger.dump(step=self.num_timesteps)
 
             if self.verbose > 1:
                 log_dict: dict[str, Any] = {
                     "step": self.num_timesteps,
-                    "eval/mean_reward": mean_reward,
-                    "eval/std_reward": std_reward,
-                    "eval/best_model_step": self.best_model_step,
-                    "eval/best_mean_reward": self.best_mean_reward,
-                    "eval/best_std_reward": self.best_std_reward,
+                    "eval/mean_rew_ep": mean_rew_ep,
+                    "eval/std_rew_ep": std_rew_ep,
+                    "eval/best_model_at_step": self.best_model_at_step,
+                    "eval/best_mean_rew_ep": self.best_mean_rew_ep,
+                    "eval/best_std_rew_ep": self.best_std_rew_ep,
                 }
                 CYAN = "\033[36m"
                 RESET = "\033[0m"
@@ -356,9 +361,9 @@ def train(
     rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
         print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
-        print("Best model at step: %d" % (eval_best_model_callback.best_model_step))
-        print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_reward))
-        print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_reward))
+        print("Best model at step: %d" % (eval_best_model_callback.best_model_at_step))
+        print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_rew_ep))
+        print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_rew_ep))
     # ==========================
 
     # ====== Model Export ======
