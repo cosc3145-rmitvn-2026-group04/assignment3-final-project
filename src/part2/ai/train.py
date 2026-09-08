@@ -342,7 +342,7 @@ def train(
         json.dump(train_curriculum_phases, file, indent=4)
     if verbose > 2:
         print("Train curriculum generated (%d phases). Datadump at '%s'." % (
-            train_hyperparams["train_curriculum"]["n_phases"],
+            len(train_curriculum_phases),
             str(train_curriculum_datadump_file)
         ))
 
@@ -441,7 +441,7 @@ def train(
         json.dump(eval_curriculum_phases, file, indent=4)
     if verbose > 2:
         print("Eval curriculum generated (%d phases). Datadump at '%s'." % (
-            train_hyperparams["eval_curriculum"]["n_phases"],
+            len(eval_curriculum_phases),
             str(eval_curriculum_datadump_file)
         ))
     eval_best_model_callback: EvalBestModelCallback = EvalBestModelCallback(
@@ -469,10 +469,15 @@ def train(
 
     rprint("[green]-> Training finished.[/green]")
     if verbose > 0:
-        print("Phases cleared: %d" % (env_phase_callback.current_phase_index + 1))
+        train_phases_cleared: int = env_phase_callback.current_phase_index + 1
+        print("Phases cleared (train curriculum): %d/%d (%.2f)%%" % (
+            train_phases_cleared,
+            len(train_curriculum_phases),
+            train_phases_cleared / len(train_curriculum_phases) * 100.0,
+        ))
         print("Best model at step: %d" % (eval_best_model_callback.best_model_at_step))
-        print("Best evaluated mean reward: %.2f" % (eval_best_model_callback.best_mean_rew_ep))
-        print("Best evaluated std reward: %.2f" % (eval_best_model_callback.best_std_rew_ep))
+        print("Best mean_rew_ep (eval): %.2f" % (eval_best_model_callback.best_mean_rew_ep))
+        print("Best std_rew_ep (eval): %.2f" % (eval_best_model_callback.best_std_rew_ep))
     # ==========================
 
     # ====== Model Export ======
