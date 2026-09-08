@@ -130,4 +130,4 @@ python -m src.part2.main -v3 -m evaluate -M models/part2/dqn.control_style_1.pkl
 #### Outputs:
 
 - `models/part2`: Default trained model export directory.
-- `logs/part2/<model_type>.<control_type>.<unix_timestamp>.log`: Training logs directory (TensorBoard output). Use `python -m tensorboard --logdir=logs/part2/<model_type>.<control_type>.<unix_timestamp>.log` to view. Replace `<model_type>`, `<control_type>`, and `<unix_timestamp>` with the appropriate values.
+- `logs/part2/<model_type>.<control_type>.<unix_timestamp>.log`: Training logs directory (TensorBoard output). Use `python -m tensorboard.main --logdir=logs/part2/<model_type>.<control_type>.<unix_timestamp>.log` to view. Replace `<model_type>`, `<control_type>`, and `<unix_timestamp>` with the appropriate values.
