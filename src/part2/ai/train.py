@@ -19,16 +19,12 @@ from stable_baselines3.common.callbacks import BaseCallback, LogEveryNTimesteps
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from part2.ai.gym.environment import make_train_game_environment_fn, GameEnvironment
-from part2.game.player import PLAYER_RADIUS, ActionStyle
-from part2.game.enemy import ENEMY_SPAWNER_RADIUS
+from part2.game.player import ActionStyle
 from part2.game.game import GameStatus
 from part2.config import (
         MODELS_DIR,
         MODELS_TRAIN_TEMP_DIR,
         TRAIN_LOG_DIR,
-        WINDOW_WIDTH,
-        WINDOW_HEIGHT,
-        MAIN_HUD_HEIGHT,
         FPS)
 
 ENV_HYPERPARAMS_CONFIG_FILE: Path = Path(__file__).resolve().parents[1] / "rl_env_hparams.json"
@@ -221,9 +217,6 @@ def generate_curriculum_phases(
     def _lerp(v0: float, v1: float, t: float) -> float:
         return (1 - t) * v0 + t * v1
 
-    environment_half_width: int = WINDOW_WIDTH // 2
-    environment_half_height: int = (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2
-
     rng: Random = Random(seed)
     phases: list[dict[str, Any]] = []
     for i in range(n_phases):
@@ -232,12 +225,8 @@ def generate_curriculum_phases(
 
         phase["phase_name"] = "%d" % (i)
         phase["player_position"] = {
-            "x": rng.randrange(
-                    int(PLAYER_RADIUS) - environment_half_width,
-                    environment_half_width - int(PLAYER_RADIUS)),
-            "y": rng.randrange(
-                    int(PLAYER_RADIUS) - environment_half_height,
-                    environment_half_height - int(PLAYER_RADIUS)),
+            "x": 0,  # Placeholder. Will be randomized by make_train_game_environment_fn.
+            "y": 0,  # Placeholder. Will be randomized by make_train_game_environment_fn.
         }
 
         enemy_spawner_count: int = round(_lerp(*(*enemy_spawner_count_range, t)))
@@ -247,12 +236,8 @@ def generate_curriculum_phases(
         for _ in range(enemy_spawner_count):
             enemy_spawner: dict[str, Any] = {
                 "position": {
-                    "x": rng.randrange(
-                            int(ENEMY_SPAWNER_RADIUS) - environment_half_width,
-                            environment_half_width - int(ENEMY_SPAWNER_RADIUS)),
-                    "y": rng.randrange(
-                            int(ENEMY_SPAWNER_RADIUS) - environment_half_height,
-                            environment_half_height - int(ENEMY_SPAWNER_RADIUS)),
+                    "x": 0,  # Placeholder. Will be randomized by make_train_game_environment_fn.
+                    "y": 0,  # Placeholder. Will be randomized by make_train_game_environment_fn.
                 },
                 "health": enemy_spawner_health,
                 "spawn_amount": enemy_spawner_spawn_amount,
@@ -297,7 +282,7 @@ def train(
         print("Default MODELS_TRAIN_TEMP_DIR='%s'" % (str(MODELS_TRAIN_TEMP_DIR)))
         print("Default TRAIN_LOG_DIR='%s'" % (str(TRAIN_LOG_DIR)))
 
-    set_random_seed(seed=seed, using_cuda=device=="cuda")
+    set_random_seed(seed=seed, using_cuda=(device=="cuda"))
     if verbose > 0:
         rprint("[blue]-> RNG randomized.[/blue]")
 
@@ -458,8 +443,8 @@ def train(
             eval_env=Monitor(GameEnvironment(
                     action_style=action_style,
                     phases=eval_curriculum_phases,
-                    random_agent_spawn_position=True,
-                    random_agent_spawn_rotation=True,
+                    random_agent_position=True,
+                    random_agent_rotation=True,
                     max_steps=env_hyperparams["max_steps_episode"])),
             eval_freq=train_hyperparams["eval_freq"],
             n_eval_episodes=train_hyperparams["n_eval_episodes"],

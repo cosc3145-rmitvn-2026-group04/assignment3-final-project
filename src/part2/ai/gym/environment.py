@@ -1,14 +1,14 @@
 from __future__ import annotations
 from typing import Any, SupportsFloat
 from collections.abc import Callable
-from random import randint, random
+from random import randint, randrange, random
 import numpy as np
 from gymnasium import Env, spaces
 from pygame.math import Vector2, clamp
 from part2.ai.gym.agent import PlayerControllerAgent
 from part2.ai.gym.config import get_hyperparameters
 from part2.game.player import Player, Action, ActionStyle, COMPOSITE_ACTIONS
-from part2.game.enemy import EnemySpawner, Enemy
+from part2.game.enemy import ENEMY_SPAWNER_RADIUS, EnemySpawner, Enemy
 from part2.game.game import Game, GameStatus
 from part2.config import WINDOW_WIDTH, WINDOW_HEIGHT, MAIN_HUD_HEIGHT, FPS
 
@@ -28,8 +28,9 @@ def make_train_game_environment_fn(
         environment: GameEnvironment = GameEnvironment(
                 action_style=action_style,
                 phases=phases,
-                random_agent_spawn_position=True,
-                random_agent_spawn_rotation=True,
+                random_agent_position=True,
+                random_agent_rotation=True,
+                random_enemy_spawner_positions=True,
                 max_steps=max_steps)
         environment.reset(seed=seed)
         return environment
@@ -42,8 +43,9 @@ class GameEnvironment(Env):
     def __init__(self,
             action_style: ActionStyle,
             phases: list[dict[str, Any]],
-            random_agent_spawn_position: bool = False,
-            random_agent_spawn_rotation: bool = False,
+            random_agent_position: bool = False,
+            random_agent_rotation: bool = False,
+            random_enemy_spawner_positions: bool = False,
             max_steps: int = 0
     ) -> None:
         super().__init__()
@@ -54,8 +56,9 @@ class GameEnvironment(Env):
         self.agent: Player = Player(PlayerControllerAgent())
         self.agent.controller.attach_player(self.agent)
         self.phases: list[dict[str, Any]] = phases
-        self.random_agent_spawn_position: bool = random_agent_spawn_position
-        self.random_agent_spawn_rotation: bool = random_agent_spawn_rotation
+        self.random_agent_position: bool = random_agent_position
+        self.random_agent_rotation: bool = random_agent_rotation
+        self.random_enemy_spawner_positions: bool = random_enemy_spawner_positions
         self.set_phase(0)
 
         # Agent observation (normalized): [x, y, vel_x, vel_y, rotation, health, can_shoot, is_invulnerable].
@@ -96,10 +99,12 @@ class GameEnvironment(Env):
             raise ValueError("`phase_index` out of bound.")
         self.current_phase_index = phase_index
         self.game = Game(self.agent, self.phases[self.current_phase_index])
-        if self.random_agent_spawn_position:
-            self._randomize_agent_spawn_position()
-        if self.random_agent_spawn_rotation:
-            self._randomize_agent_spawn_rotation()
+        if self.random_agent_position:
+            self._randomize_agent_position()
+        if self.random_agent_rotation:
+            self._randomize_agent_rotation()
+        if self.random_enemy_spawner_positions:
+            self._randomize_enemy_spawner_positions()
 
     def reset(self,
             *,
@@ -109,10 +114,12 @@ class GameEnvironment(Env):
         super().reset(seed=seed, options=options)
         self.current_step = 0
         self.game.reset()
-        if self.random_agent_spawn_position:
-            self._randomize_agent_spawn_position()
-        if self.random_agent_spawn_rotation:
-            self._randomize_agent_spawn_rotation()
+        if self.random_agent_position:
+            self._randomize_agent_position()
+        if self.random_agent_rotation:
+            self._randomize_agent_rotation()
+        if self.random_enemy_spawner_positions:
+            self._randomize_enemy_spawner_positions()
         return self._get_observation(), self._get_info()
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -263,10 +270,18 @@ class GameEnvironment(Env):
             r = r[:self.hparams["max_enemy_obs"]]
         return r
 
-    def _randomize_agent_spawn_position(self) -> None:
-        self.agent.position = (Vector2(
+    def _randomize_agent_position(self) -> None:
+        self.agent.position = Vector2(
                 randint(int(self.agent.radius), int(WINDOW_WIDTH - self.agent.radius)),
-                randint(int(self.agent.radius), int(WINDOW_HEIGHT - MAIN_HUD_HEIGHT - self.agent.radius))))
+                randint(int(self.agent.radius), int(WINDOW_HEIGHT - MAIN_HUD_HEIGHT - self.agent.radius)))
 
-    def _randomize_agent_spawn_rotation(self) -> None:
+    def _randomize_agent_rotation(self) -> None:
         self.agent.rotation = random() * 360.0
+
+    def _randomize_enemy_spawner_positions(self) -> None:
+        enemy_spawners: list[EnemySpawner] = self.game.enemy_spawner_pool.objects()
+        enemy_spawner: EnemySpawner
+        for enemy_spawner in enemy_spawners:
+            enemy_spawner.position = Vector2(
+                    randint(int(ENEMY_SPAWNER_RADIUS), WINDOW_WIDTH - int(ENEMY_SPAWNER_RADIUS)),
+                    randint(int(ENEMY_SPAWNER_RADIUS), WINDOW_HEIGHT - MAIN_HUD_HEIGHT - int(ENEMY_SPAWNER_RADIUS)))
