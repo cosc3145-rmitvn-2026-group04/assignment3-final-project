@@ -12,6 +12,7 @@ from src.part1.game.levels import (
     LEVEL_2,
     LEVEL_3,
     LEVEL_4,
+    LEVEL_5,
 )
 from src.part1.ai.q_learning import QLearningAgent
 from src.part1.ai.SARSA import SARSAAgent
@@ -21,8 +22,9 @@ LEVEL_CONFIG = {
     0: {"layout": LEVEL_0, "default_algo": "q_learning"},
     1: {"layout": LEVEL_1, "default_algo": "sarsa"},
     2: {"layout": LEVEL_2, "default_algo": "q_learning"},
-    3: {"layout": LEVEL_3, "default_algo": "sarsa"},
+    3: {"layout": LEVEL_3, "default_algo": "q_learning"},
     4: {"layout": LEVEL_4, "default_algo": "q_learning"},
+    5: {"layout": LEVEL_5, "default_algo": "q_learning"},
 }
 
 AGENT_CLASSES = {
