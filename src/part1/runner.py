@@ -1,12 +1,14 @@
 from pathlib import Path
 
+from math import sqrt
+
 import pygame
 
 from src.part1.ai.SARSA import SARSAAgent
 
 from src.part1.ai.RLAgent import linear_epsilon
 
-from src.part1.game.config import FPS, MAX_STEPS
+from src.part1.game.config import FPS, MAX_STEPS, INTRINSIC_REWARD_STRENGTH
 
 
 def evaluate_policy(env, agent, episodes=100, max_steps=MAX_STEPS):
@@ -40,6 +42,7 @@ def run_training(
     save_path,
     max_steps=MAX_STEPS,
     epsilon_decay_fraction=1.0,
+    intrinsic_reward_enabled=False
 ):
     """Train without rendering and save the learned Q-table."""
     if not 0 < epsilon_decay_fraction <= 1:
@@ -58,6 +61,7 @@ def run_training(
             start_eps,
             end_eps,
         )
+        state_visits = {state: 1}
         total_reward = 0
         steps_taken = 0
         done = False
@@ -67,6 +71,9 @@ def run_training(
         
         for step in range(max_steps):
             next_state, reward, done, info = env.step(action)
+            if intrinsic_reward_enabled:
+                reward += INTRINSIC_REWARD_STRENGTH / sqrt(state_visits[state] + 1)
+
             time_limit_reached = step == max_steps - 1
             update_done = done or time_limit_reached
             
@@ -99,6 +106,11 @@ def run_training(
                 )
             
             state = next_state
+            state_visits[state] = (
+                state_visits[state] + 1
+                if state in state_visits.keys()
+                else 1
+            )
             total_reward += reward
             steps_taken = step + 1
 
