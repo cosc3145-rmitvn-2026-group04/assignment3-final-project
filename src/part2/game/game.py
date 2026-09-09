@@ -36,6 +36,7 @@ class Game:
         self.player.position = screen_center + Vector2(
                 self.phase_data["player_position"]["x"],
                 self.phase_data["player_position"]["y"])
+        self.player.invulnerable = False
         self.player_bullet_pool: PlayerBulletPool = PlayerBulletPool()
         self.player.bullet_pool = self.player_bullet_pool
 

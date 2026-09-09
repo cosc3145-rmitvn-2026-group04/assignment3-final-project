@@ -40,7 +40,7 @@ class EnemySpawner(SpatialObject):
         self.enemy_spawn_cooldown_timer: Timer = Timer(wait_time=enemy_spawn_delay, one_shot=True)
         self.activation_timer: Timer = Timer(wait_time=activation_delay, one_shot=True, autostart=True)
         self.invulnerable: bool = False
-        self.invulnerable_timer: Timer = Timer(0.1, one_shot=True)
+        self.invulnerable_timer: Timer = Timer(0.08, one_shot=True)
         self.__first_spawn: bool = True
         self.__killed: bool = False
         self.__kill_cooldown_timer: Timer = Timer(wait_time=0.05, one_shot=True)
