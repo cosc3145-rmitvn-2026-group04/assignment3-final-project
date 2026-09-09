@@ -4,17 +4,14 @@ Course information: [https://handbook.rmit.edu.au/ords/r/rmit/catalogue/class?p8
 
 ---
 
-
 ## Assignment 3 (Undergrad) - Final Project: Reinforcement Learning and DL Agents
 
 Assignment overview: https://rmit.instructure.com/courses/171534/assignments/1247324
-
 
 ## Dependencies
 
 - Python 3.11.
 - Other Python packages in `requirements.txt`.
-
 
 ## Structure
 
@@ -28,7 +25,6 @@ Assignment overview: https://rmit.instructure.com/courses/171534/assignments/124
 ├── LICENSE             # License information
 └── README.md           # This file
 ```
-
 
 ## Development Setup
 
@@ -63,6 +59,22 @@ pip install -r requirements.txt
 
 ```
 python -m src.part1.main
+```
+
+#### Arguments:
+
+```txt
+Assignment 3 [Undergrad] - Part 1: Classical RL
+
+options:
+ mode {train, evaluate, manual}
+                         Train without graphics, evaluate the learnt policy or manually play the game
+ --algo {qlearning,sarsa}
+                        Sets the reinforcement learning algorithm for training mod. Default: 'qlearning'
+ --level {0,1,2,3,4,5,6}
+                        Sets the level for 'train' mode
+ --seed
+                        If the 'mode' is set to 'train', sets the RNG seed for the training environment. Default: None
 ```
 
 ### Part 2
