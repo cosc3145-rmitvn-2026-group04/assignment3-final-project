@@ -13,6 +13,7 @@ from src.part1.game.levels import (
     LEVEL_3,
     LEVEL_4,
     LEVEL_5,
+    LEVEL_6,
 )
 from src.part1.ai.q_learning import QLearningAgent
 from src.part1.ai.SARSA import SARSAAgent
@@ -25,6 +26,7 @@ LEVEL_CONFIG = {
     3: {"layout": LEVEL_3, "default_algo": "q_learning"},
     4: {"layout": LEVEL_4, "default_algo": "q_learning"},
     5: {"layout": LEVEL_5, "default_algo": "q_learning"},
+    6: {"layout": LEVEL_6, "default_algo": "q_learning"},
 }
 
 AGENT_CLASSES = {
@@ -38,6 +40,7 @@ KEY_TO_ACTION = {
     pygame.K_LEFT: 2,
     pygame.K_RIGHT: 3,
 }
+
 def get_model_path(level_id: int, algo_name: str) -> Path:
     """generates path: models/part1/level{id}_{algo}.pkl"""
     base_dir = Path(__file__).resolve().parents[2] / "models" / "part1"
