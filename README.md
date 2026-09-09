@@ -86,6 +86,10 @@ python -m src.part2.main
 #### Arguments:
 
 ```txt
+usage: main.py [-h] -m {train,evaluate,play} [-c {1,2}] [-a {PPO,DQN}] [-s SEED] [-n N_THREADS]
+               [-d {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,maia,xla,lazy,vulkan,mps,meta,hpu,mtia,privateuseone}] [-M MODEL_PATH]
+               [-P GAME_PHASES] [-p START_PHASE] [-v VERBOSE]
+
 Assignment 3 [Undergrad] - Part 2: Arena Deep RL
 
 options:
@@ -98,12 +102,15 @@ options:
                         Sets the reinforcement learning algorithm for 'train' mode. Default: 'PPO'.
   -s SEED, --seed SEED  If `mode` is set to 'train', sets RNG seed for the training environment. Default: 0.
   -n N_THREADS, --n-threads N_THREADS
-                        If `mode` is set to 'train' and `device` is a CPU type, sets the number of parallel training processes (limited by the number of available CPU cores). Default: 1.
-  -d {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,maia,xla,lazy,vulkan,mps,meta,hpu,mtia,privateuseone}, --device {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,ma}
+                        If `mode` is set to 'train' and `device` is a CPU type, sets the number of parallel training processes (limited by the number of available CPU
+                        cores). Default: 1.
+  -d {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,maia,xla,lazy,vulkan,mps,meta,hpu,mtia,privateuseone}, --device {auto,cpu,cuda,ipu,xpu,mkldnn,opengl,opencl,ideep,hip,ve,fpga,maia,xla,lazy,vulkan,mps,meta,hpu,mtia,privateuseone}
                         If `mode` is set to 'train', sets the device used by the training algorithm. Default: 'auto'.
   -M MODEL_PATH, --model-path MODEL_PATH
-                        If `mode` is set to 'train' or 'evaluate', sets path to the output/input model. If `mode` is 'train' and this is not specified, a default path in 'models/part2' will be
-                        used.
+                        If `mode` is set to 'train' or 'evaluate', sets path to the output/input model. If `mode` is 'train' and this is not set, a default path in
+                        'models/part2' will be used.
+  -P GAME_PHASES, --game-phases GAME_PHASES
+                        If `mode` is set to 'play' or 'evaluate', loads the game phases from the specified file path instead of the default in `game_phases.json`.
   -p START_PHASE, --start-phase START_PHASE
                         If `mode` is set to 'play' or 'evaluate', starts the game at the specified phase. Default: 0.
   -v VERBOSE, --verbose VERBOSE
@@ -118,6 +125,7 @@ For more information, please use the `-h`, `-help`, or `--help` flag.
 python -m src.part2.main -v1 -m play  # Play the game manually. CLI Log verbose level 1.
 python -m src.part2.main -v2 -m train -a DQN -c1 -n12 -d cpu  # Train a DQN agent for control style 1 using 12 parallel CPU threads. CLI Log verbose level 2.
 python -m src.part2.main -v3 -m evaluate -M models/part2/dqn.control_style_1.pkl p2  # Evaluate the model at 'models/part2/dqn.control_style_1.pkl' starting from Phase 2 onward. CLI Log verbose level 3.
+python -m src.part2.main -v3 -m evaluate -M models/part2/ppo.control_style_2.pkl -P custom_game_phases.json  # Evaluate the model at 'models/part2/ppo.control_style_2.pkl' using phases loaded from custom_game_phases.json instead of the default game_phases.json. CLI Log verbose level 3.
 ```
 
 #### Configuration files:
