@@ -445,6 +445,7 @@ def train(
                     phases=eval_curriculum_phases,
                     random_agent_position=True,
                     random_agent_rotation=True,
+                    random_enemy_spawner_positions=True,
                     max_steps=env_hyperparams["max_steps_episode"])),
             eval_freq=train_hyperparams["eval_freq"],
             n_eval_episodes=train_hyperparams["n_eval_episodes"],
