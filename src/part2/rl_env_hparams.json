@@ -4,7 +4,7 @@
     "max_steps_episode": 5000,
     "reward_step": 0.0001,
     "reward_agent_shoot": -0.001,
-    "reward_agent_hurt": -10.0,
+    "reward_agent_hurt": -8.0,
     "reward_enemy_spawner_hit": 10.0,
     "reward_enemy_spawner_kill": 50.0,
     "reward_enemy_kill": 2.0,
