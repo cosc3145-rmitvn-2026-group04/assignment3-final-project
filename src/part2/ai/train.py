@@ -221,8 +221,8 @@ def generate_curriculum_phases(
     def _lerp(v0: float, v1: float, t: float) -> float:
         return (1 - t) * v0 + t * v1
 
-    environment_width: int = WINDOW_WIDTH
-    environment_height: int = WINDOW_HEIGHT - MAIN_HUD_HEIGHT
+    environment_half_width: int = WINDOW_WIDTH // 2
+    environment_half_height: int = (WINDOW_HEIGHT - MAIN_HUD_HEIGHT) // 2
 
     rng: Random = Random(seed)
     phases: list[dict[str, Any]] = []
@@ -232,8 +232,12 @@ def generate_curriculum_phases(
 
         phase["phase_name"] = "%d" % (i)
         phase["player_position"] = {
-            "x": rng.randrange(int(PLAYER_RADIUS), environment_width - int(PLAYER_RADIUS)),
-            "y": rng.randrange(int(PLAYER_RADIUS), environment_height - int(PLAYER_RADIUS)),
+            "x": rng.randrange(
+                    int(PLAYER_RADIUS) - environment_half_width,
+                    environment_half_width - int(PLAYER_RADIUS)),
+            "y": rng.randrange(
+                    int(PLAYER_RADIUS) - environment_half_height,
+                    environment_half_height - int(PLAYER_RADIUS)),
         }
 
         enemy_spawner_count: int = round(_lerp(*(*enemy_spawner_count_range, t)))
@@ -243,8 +247,12 @@ def generate_curriculum_phases(
         for _ in range(enemy_spawner_count):
             enemy_spawner: dict[str, Any] = {
                 "position": {
-                    "x": rng.randrange(int(ENEMY_SPAWNER_RADIUS), environment_width - int(ENEMY_SPAWNER_RADIUS)),
-                    "y": rng.randrange(int(ENEMY_SPAWNER_RADIUS), environment_height - int(ENEMY_SPAWNER_RADIUS)),
+                    "x": rng.randrange(
+                            int(ENEMY_SPAWNER_RADIUS) - environment_half_width,
+                            environment_half_width - int(ENEMY_SPAWNER_RADIUS)),
+                    "y": rng.randrange(
+                            int(ENEMY_SPAWNER_RADIUS) - environment_half_height,
+                            environment_half_height - int(ENEMY_SPAWNER_RADIUS)),
                 },
                 "health": enemy_spawner_health,
                 "spawn_amount": enemy_spawner_spawn_amount,
