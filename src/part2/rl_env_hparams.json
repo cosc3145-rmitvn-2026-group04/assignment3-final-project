@@ -7,7 +7,7 @@
     "reward_agent_hurt": -9.0,
     "reward_enemy_spawner_hit": 10.0,
     "reward_enemy_spawner_kill": 50.0,
-    "reward_enemy_kill": 0.2,
+    "reward_enemy_kill": 0.1,
     "reward_phase_win": 200.0,
     "reward_phase_loss": -50.0,
     "reward_episode_truncated": -50.0,
