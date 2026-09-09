@@ -71,7 +71,7 @@ def parse_arguments():
         help="override the level's default algorithm",
     )
     parser.add_argument(
-        "--instrinsic-reward",
+        "--intrinsic-reward",
         action="store_true",
         help="enable additional intrinsic reward for `train` mode, has no effect in other modes",
     )
@@ -116,7 +116,7 @@ def main():
             epsilon_decay_fraction = training_config[
                 "epsilon_decay_fraction"
             ],
-            intrinsic_reward_enabled=arguments.instrinsic_reward
+            intrinsic_reward_enabled=arguments.intrinsic_reward
         )
 
     elif arguments.mode == "evaluate":

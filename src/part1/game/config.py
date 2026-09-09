@@ -27,6 +27,12 @@ LEVEL_TRAINING_OVERRIDES = {
         "max_steps": 400,
         "epsilon_decay_fraction": 0.8,
     },
+    5: {
+        "episodes": 40_000,
+    },
+    6: {
+        "episodes": 40_000,
+    },
 }
 
 
