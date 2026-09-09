@@ -259,6 +259,7 @@ class GameEnvironment(Env):
     def _get_observed_enemy_spawners(self) -> list[EnemySpawner]:
         r: list[EnemySpawner] = self.game.enemy_spawner_pool.objects().copy()
         r.sort(key=lambda enemy_spawner: self.agent.position.distance_squared_to(enemy_spawner.position))
+        r = [enemy for enemy in r if enemy.health > 0]
         if len(r) > self.hparams["max_enemy_spawner_obs"]:
             r = r[:self.hparams["max_enemy_spawner_obs"]]
         return r
