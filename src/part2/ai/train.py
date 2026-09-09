@@ -317,25 +317,25 @@ def train(
     env_hyperparams: dict[str, Any]
     with open(ENV_HYPERPARAMS_CONFIG_FILE, "r") as file:
         env_hyperparams = json.load(file)
-    with open(TRAIN_LOG_DIR / ENV_HYPERPARAMS_CONFIG_FILE.name, "w") as file:
+    with open(train_log_subdir / ENV_HYPERPARAMS_CONFIG_FILE.name, "w") as file:
         json.dump(env_hyperparams, file, indent=4)
 
     model_hyperparams: dict[str, Any]
     with open(MODEL_HYPERPARAMS_CONFIG_FILE, "r") as file:
         model_hyperparams = json.load(file)
-    with open(TRAIN_LOG_DIR / MODEL_HYPERPARAMS_CONFIG_FILE.name, "w") as file:
+    with open(train_log_subdir / MODEL_HYPERPARAMS_CONFIG_FILE.name, "w") as file:
         json.dump(model_hyperparams, file, indent=4)
 
     train_hyperparams: dict[str, Any]
     with open(TRAIN_HYPERPARAMS_CONFIG_FILE, "r") as file:
         train_hyperparams = json.load(file)
-    with open(TRAIN_LOG_DIR / TRAIN_HYPERPARAMS_CONFIG_FILE.name, "w") as file:
+    with open(train_log_subdir / TRAIN_HYPERPARAMS_CONFIG_FILE.name, "w") as file:
         json.dump(train_hyperparams, file, indent=4)
 
     if verbose > 1:
         rprint("[blue]-> Bootstrapping complete.[/blue]")
     if verbose > 2:
-        print("Hyperparameters logged at: '%s'" % (TRAIN_LOG_DIR))
+        print("Hyperparameters logged at: '%s'" % (train_log_subdir))
     # ==========================
 
     # === Environment Config ===
