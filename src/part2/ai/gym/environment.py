@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, SupportsFloat
 from collections.abc import Callable
-from random import randint, randrange, random
+from random import randint, random
 import numpy as np
 from gymnasium import Env, spaces
 from pygame.math import Vector2, clamp

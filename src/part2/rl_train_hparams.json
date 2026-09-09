@@ -1,5 +1,5 @@
 {
-    "total_timesteps": 4000000,
+    "total_timesteps": 8000000,
     "train_curriculum": {
         "n_phases": 16,
         "enemy_spawner_count_range": [1, 4],
