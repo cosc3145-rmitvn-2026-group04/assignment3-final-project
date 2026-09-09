@@ -344,7 +344,7 @@ def train(
     # Include support for multi-process parallel training.
     train_curriculum_phases: list[dict[str, Any]] = generate_curriculum_phases(
             **train_hyperparams["train_curriculum"],
-            seed=seed)
+            seed=seed+10)
     train_curriculum_datadump_file: Path = train_log_subdir / "train_curriculum.json"
     with open(train_curriculum_datadump_file, "w", encoding="utf-8") as file:
         json.dump(train_curriculum_phases, file, indent=4)
@@ -443,7 +443,7 @@ def train(
 
     eval_curriculum_phases: list[dict[str, Any]] = generate_curriculum_phases(
             **train_hyperparams["eval_curriculum"],
-            seed=seed)
+            seed=seed+100)
     eval_curriculum_datadump_file: Path = train_log_subdir / "eval_curriculum.json"
     with open(eval_curriculum_datadump_file, "w", encoding="utf-8") as file:
         json.dump(eval_curriculum_phases, file, indent=4)
