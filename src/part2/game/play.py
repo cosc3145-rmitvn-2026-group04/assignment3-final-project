@@ -47,6 +47,7 @@ def play(phases: list[dict[str, Any]], start_phase: int = 0, verbose: int = 0) -
         help_hud: HelpHUD = HelpHUD(fonts)
 
         debug_render: bool = False
+        verbose_phase_won_printed: bool = False
         verbose_phase_lost_printed: bool = False
         running: bool = True
         while running:
@@ -77,6 +78,7 @@ def play(phases: list[dict[str, Any]], start_phase: int = 0, verbose: int = 0) -
                         player.controller = PlayerControllerInputStyleA()
                     player.controller.player = player
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                    verbose_phase_won_printed = False
                     verbose_phase_lost_printed = False
                     game.reset()
             # ==========================
@@ -98,10 +100,11 @@ def play(phases: list[dict[str, Any]], start_phase: int = 0, verbose: int = 0) -
             if game.game_over:
                 if verbose > 0:
                     match game.status:
-                        case GameStatus.GAME_WON:
+                        case GameStatus.GAME_WON if not verbose_phase_won_printed:
                             rprint("[cyan]-> Phase %s won.[/cyan]" % (
                                 phases[phase_index]["phase_name"]
                             ))
+                            verbose_phase_won_printed = True
                         case GameStatus.GAME_LOST if not verbose_phase_lost_printed:
                             rprint("[cyan]-> Phase %s lost. Press [R] to restart.[/cyan]" % (
                                 phases[phase_index]["phase_name"]
