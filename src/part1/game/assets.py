@@ -81,13 +81,17 @@ class AssetManager:
             asset_root=PART1_ASSET_ROOT,
         )
 
-        self.monster = self._frame(
-            "Farm Animals/Chicken Red.png",
-            column=0,
-            row=0,
-            frame_size=16,
-            output_size=TILE_SIZE // 2,
-        )
+        self.monster = [
+            self._frame(
+                "Monster.png",
+                column=column,
+                row=0,
+                frame_size=32,
+                output_size=TILE_SIZE,
+                asset_root=PART1_ASSET_ROOT,
+            )
+            for column in range(4)
+        ]
         self.key = self._create_key()
 
     def _load_sheet(self, relative_path, asset_root=FARM_ASSET_ROOT):

@@ -1,7 +1,9 @@
-import pygame
-from .assets import AssetManager
 import random
-from .config import TILE_SIZE
+
+import pygame
+
+from .assets import AssetManager
+from .config import MONSTER_MOVE_PROBABILITY, TILE_SIZE
 
 HUD_HEIGHT = 80
 
@@ -59,15 +61,30 @@ class GridWorld:
         self.has_key = False
         self.chest_open = False
         self.is_dead = False
+        self.death_reason = None
         return self.get_state()
 
     def get_state(self):
+        player_row, player_col = self.player_position
+
+        # Relative offsets retain nearby danger exactly 
+        # while grouping distant monsters by their general direction
+        relative_monsters = tuple(
+            sorted(
+                (
+                    max(-2, min(2, monster_row - player_row)),
+                    max(-2, min(2, monster_col - player_col)),
+                )
+                for monster_row, monster_col in self.monsters
+            )
+        )
+
         return (
             self.player_position,
             tuple(sorted(self.apples)),
             self.has_key,
             self.chest_open,
-            tuple(sorted(self.monsters)),
+            relative_monsters,
         )
 
     def all_rewards_collected(self):
@@ -76,14 +93,50 @@ class GridWorld:
         chest_collected = self.chest_pos is None or self.chest_open
         return apples_collected and chest_collected
         
-    # TODO: add monsters
-        
+    def _move_monsters(self):
+        """Move each monster independently with the required probability."""
+        occupied = set(self.monsters)
+        moved_monsters = set()
+        movement_count = 0
+
+        for monster_position in sorted(self.monsters):
+            occupied.remove(monster_position)
+            destination = monster_position
+
+            if random.random() < MONSTER_MOVE_PROBABILITY:
+                possible_destinations = []
+                for row_change, col_change in ACTION_DELTAS.values():
+                    candidate = (
+                        monster_position[0] + row_change,
+                        monster_position[1] + col_change,
+                    )
+                    if (
+                        0 <= candidate[0] < self.rows
+                        and 0 <= candidate[1] < self.cols
+                        and candidate not in self.rocks
+                        and candidate not in self.fires
+                        and candidate not in occupied
+                        and candidate not in moved_monsters
+                    ):
+                        possible_destinations.append(candidate)
+
+                if possible_destinations:
+                    destination = random.choice(possible_destinations)
+                    movement_count += 1
+
+            moved_monsters.add(destination)
+            occupied.add(destination)
+
+        self.monsters = moved_monsters
+        return movement_count
+
     def step(self, action):
         if self.is_dead:
             return self.get_state(), 0, True, {
                 "success": False,
                 "died": True,
-                "termination_reason": "fire",
+                "termination_reason": self.death_reason,
+                "monsters_moved": 0,
             }
 
         row, col = self.player_position
@@ -105,7 +158,14 @@ class GridWorld:
             self.player_position = destination
 
         reward = 0
-        self.is_dead = self.player_position in self.fires
+        monsters_moved = 0
+
+        if self.player_position in self.fires:
+            self.is_dead = True
+            self.death_reason = "fire"
+        elif self.player_position in self.monsters:
+            self.is_dead = True
+            self.death_reason = "monster"
 
         if not self.is_dead:
             # Pick up an apple.
@@ -131,9 +191,16 @@ class GridWorld:
                 self.chest_open = True
                 reward += 2
 
+            # Monsters move after every surviving agent action
+            # A monster entering the player's tile causes immediate death
+            monsters_moved = self._move_monsters()
+            if self.player_position in self.monsters:
+                self.is_dead = True
+                self.death_reason = "monster"
+
         success = not self.is_dead and self.all_rewards_collected()
         done = self.is_dead or success
-        termination_reason = "fire" if self.is_dead else (
+        termination_reason = self.death_reason if self.is_dead else (
             "completed" if success else None
         )
 
@@ -141,6 +208,7 @@ class GridWorld:
             "success": success,
             "died": self.is_dead,
             "termination_reason": termination_reason,
+            "monsters_moved": monsters_moved,
         }
 
     def render(self, message=""):
@@ -210,10 +278,14 @@ class GridWorld:
                     self.screen.blit(chest_sprite, chest_rectangle)
 
                 if pos in self.monsters:
-                    monster_rectangle = self.assets.monster.get_rect(
+                    monster_index = (
+                        pygame.time.get_ticks() // 150
+                    ) % len(self.assets.monster)
+                    monster_sprite = self.assets.monster[monster_index]
+                    monster_rectangle = monster_sprite.get_rect(
                         center=rectangle.center
                     )
-                    self.screen.blit(self.assets.monster, monster_rectangle)
+                    self.screen.blit(monster_sprite, monster_rectangle)
 
         player_row, player_col = self.player_position
         animation_index = (

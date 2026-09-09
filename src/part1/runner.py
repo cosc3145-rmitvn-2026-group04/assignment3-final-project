@@ -6,7 +6,7 @@ from src.part1.ai.SARSA import SARSAAgent
 
 from src.part1.ai.RLAgent import linear_epsilon
 
-from src.part1.game.config import MAX_STEPS
+from src.part1.game.config import FPS, MAX_STEPS
 
 
 def evaluate_policy(env, agent, episodes=100, max_steps=MAX_STEPS):
@@ -187,6 +187,6 @@ def run_interactive(env, agent=None, key_map=None):
             )
 
         env.render(message)
-        clock.tick(60)
+        clock.tick(FPS if agent else 60)
 
     env.close()
