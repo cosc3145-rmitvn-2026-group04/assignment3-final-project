@@ -49,6 +49,10 @@ class GameEnvironmentPhaseCallback(BaseCallback):
         self.episode_results: list[bool] = []
         self.current_phase_index: int = 0
 
+    def _init_callback(self) -> None:
+        super()._init_callback()
+        self.logger.record("train/curriculum_phase", self.current_phase_index)
+
     def _on_step(self) -> bool:
         for info in self.locals.get("infos", []):
             if info["game_status"] == GameStatus.GAME_WON:
@@ -63,9 +67,10 @@ class GameEnvironmentPhaseCallback(BaseCallback):
                 self.current_phase_index: int = self.training_env.get_attr("current_phase_index")[0]
                 next_phase_index: int = self.current_phase_index + 1
                 phases_count: int = len(self.training_env.get_attr("phases")[0])
-                if next_phase_index < phases_count - 1:
+                if next_phase_index < phases_count:
                     self.training_env.env_method("set_phase", next_phase_index)
                     self.episode_results.clear()
+                    self.logger.record("train/curriculum_phase", self.current_phase_index)
                     if self.verbose > 2:
                         rprint("[green]-> Win rate %.2f/%.2f (last %d eps) current training phase (%d). Progress to next training phase (%d).[/green]" % (
                             win_rate,
