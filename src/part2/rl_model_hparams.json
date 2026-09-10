@@ -3,7 +3,7 @@
         "learning_rate": 0.0003,
         "n_steps": 2048,
         "batch_size": 64,
-        "gamma": 0.995,
+        "gamma": 0.996,
         "ent_coef": 0.03
     },
     "DQN": {
@@ -14,7 +14,7 @@
         "buffer_size": 100000,
         "learning_starts": 2000,
         "batch_size": 64,
-        "gamma": 0.995,
+        "gamma": 0.996,
         "train_freq": 4,
         "target_update_interval": 1000,
         "exploration_fraction": 0.5,

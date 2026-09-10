@@ -5,7 +5,7 @@
     "reward_step": -0.005,
     "reward_agent_shoot": -0.01,
     "reward_agent_hurt": -9.5,
-    "reward_enemy_spawner_hit": 5.0,
+    "reward_enemy_spawner_hit": 8.0,
     "reward_enemy_spawner_kill": 50.0,
     "reward_enemy_kill": 0.1,
     "reward_phase_win": 200.0,
