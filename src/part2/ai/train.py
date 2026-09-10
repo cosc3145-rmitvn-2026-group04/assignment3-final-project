@@ -124,15 +124,18 @@ class EvalBestModelCallback(BaseCallback):
         self.best_model_at_step: int = 0
         self.best_mean_rew_ep: float = float("-inf")
         self.best_std_rew_ep: float = float("inf")
+        self._last_eval_step: int = 0
 
     def _init_callback(self) -> None:
         self.eval_model.save(self.best_model_temp_file_path)
         return super()._init_callback()
 
     def _on_step(self) -> bool:
-        if self.n_calls % self.eval_freq == 0:
+        if (self.num_timesteps - self._last_eval_step) >= self.eval_freq:
+            self._last_eval_step = (self.num_timesteps // self.eval_freq) * self.eval_freq
+
             if not isinstance(self.eval_env.unwrapped, GameEnvironment):
-                raise TypeError("`self.eval_env.unwrapped` must be of type GameEnvironment.")
+                raise TypeError("`eval_env.unwrapped` must be of type GameEnvironment.")
 
             unwrapped_eval_env: GameEnvironment = self.eval_env.unwrapped
             mean_rew_eps: list[float] = []
