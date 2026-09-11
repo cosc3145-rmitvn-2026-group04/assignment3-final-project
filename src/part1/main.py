@@ -44,7 +44,14 @@ KEY_TO_ACTION = {
 def get_model_path(level_id: int, algo_name: str) -> Path:
     """generates path: models/part1/level{id}_{algo}.pkl"""
     base_dir = Path(__file__).resolve().parents[2] / "models" / "part1"
+    base_dir.mkdir(parents=True, exist_ok=True)
     return base_dir / f"level{level_id}_{algo_name}.pkl"
+
+def get_log_path(level_id: int, algo_name: str) -> Path:
+    """generates path: logs/part1/level{id}_{algo}.csv"""
+    base_dir = Path(__file__).resolve().parents[2] / "logs" / "part1"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    return base_dir / f"level{level_id}_{algo_name}.csv"
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -99,6 +106,7 @@ def main():
 
     env = GridWorld(config["layout"])
     model_path = get_model_path(arguments.level, algo_name)
+    log_path = get_log_path(arguments.level, algo_name)
     
     if arguments.mode == "train":
         agent = agent_class(
@@ -112,6 +120,7 @@ def main():
             start_eps = training_config["epsilon_start"],
             end_eps = training_config["epsilon_end"],
             save_path = model_path,
+            log_path = log_path,
             max_steps = training_config["max_steps"],
             epsilon_decay_fraction = training_config[
                 "epsilon_decay_fraction"
