@@ -78,7 +78,7 @@ options:
                         gridworld level to run
   --algo {q_learning,sarsa}
                         override the level's default algorithm
-  --intrinsic-reward    enable additional intrinsic reward for `train` mode, has no effect in other modes
+  --intrinsic-reward    enable additional intrinsic reward for training
   --seed SEED           override the configured random seed
 ```
 

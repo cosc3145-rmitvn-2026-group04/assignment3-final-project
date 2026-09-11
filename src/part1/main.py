@@ -86,7 +86,7 @@ def parse_arguments():
     parser.add_argument(
         "--intrinsic-reward",
         action="store_true",
-        help="enable additional intrinsic reward for `train` mode, has no effect in other modes",
+        help="enable additional intrinsic reward for training",
     )
     parser.add_argument(
         "--seed",
