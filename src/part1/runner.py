@@ -1,12 +1,11 @@
-from pathlib import Path
+from math import sqrt
 
 import pygame
 
 from src.part1.ai.SARSA import SARSAAgent
-
 from src.part1.ai.RLAgent import linear_epsilon
-
-from src.part1.game.config import FPS, MAX_STEPS
+from src.part1.logger import Logger
+from src.part1.game.config import FPS, MAX_STEPS, INTRINSIC_REWARD_STRENGTH
 
 
 def evaluate_policy(env, agent, episodes=100, max_steps=MAX_STEPS):
@@ -38,8 +37,10 @@ def run_training(
     start_eps,
     end_eps,
     save_path,
+    log_path,
     max_steps=MAX_STEPS,
     epsilon_decay_fraction=1.0,
+    intrinsic_reward_enabled=False
 ):
     """Train without rendering and save the learned Q-table."""
     if not 0 < epsilon_decay_fraction <= 1:
@@ -48,7 +49,8 @@ def run_training(
     successful_episodes = 0
     is_sarsa = isinstance(agent, SARSAAgent)
     decay_episodes = max(2, int(episodes * epsilon_decay_fraction))
-    
+   
+    logger = Logger(log_path, ["episode", "reward", "steps", "epsilon", "success_rate"])
     for episode in range(episodes):
         state = env.reset()
         epsilon_episode = min(episode, decay_episodes - 1)
@@ -58,6 +60,7 @@ def run_training(
             start_eps,
             end_eps,
         )
+        state_visits = {state: 1}
         total_reward = 0
         steps_taken = 0
         done = False
@@ -67,6 +70,9 @@ def run_training(
         
         for step in range(max_steps):
             next_state, reward, done, info = env.step(action)
+            if intrinsic_reward_enabled:
+                reward += INTRINSIC_REWARD_STRENGTH / sqrt(state_visits[state] + 1)
+
             time_limit_reached = step == max_steps - 1
             update_done = done or time_limit_reached
             
@@ -99,6 +105,11 @@ def run_training(
                 )
             
             state = next_state
+            state_visits[state] = (
+                state_visits[state] + 1
+                if state in state_visits.keys()
+                else 1
+            )
             total_reward += reward
             steps_taken = step + 1
 
@@ -113,6 +124,13 @@ def run_training(
             
         if episode % 100 == 0 or episode == episodes - 1:
             success_rate = successful_episodes / (episode + 1)
+            logger.record({
+                "episode": episode + 1,
+                "reward": total_reward,
+                "steps": steps_taken,
+                "epsilon": epsilon,
+                "success_rate": success_rate,
+            })
             print(
                 f"Episode {episode + 1}/{episodes} | "
                 f"reward={total_reward} | "
@@ -124,7 +142,11 @@ def run_training(
     agent.save(save_path)
     # Printing only the filename avoids Windows console encoding failures
     # when a parent directory contains accented or combining characters.
-    print(f"Model saved as {Path(save_path).name}")
+    print(f"Model saved as {save_path.name}")
+
+    logger.dump()
+    print(f"Log dumped at {log_path.name}")
+    
     evaluation = evaluate_policy(env, agent, max_steps=max_steps)
     print(
         "Greedy evaluation | "

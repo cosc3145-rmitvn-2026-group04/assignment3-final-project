@@ -13,6 +13,7 @@ from src.part1.game.levels import (
     LEVEL_3,
     LEVEL_4,
     LEVEL_5,
+    LEVEL_6,
 )
 from src.part1.ai.q_learning import QLearningAgent
 from src.part1.ai.SARSA import SARSAAgent
@@ -25,6 +26,7 @@ LEVEL_CONFIG = {
     3: {"layout": LEVEL_3, "default_algo": "q_learning"},
     4: {"layout": LEVEL_4, "default_algo": "q_learning"},
     5: {"layout": LEVEL_5, "default_algo": "q_learning"},
+    6: {"layout": LEVEL_6, "default_algo": "q_learning"},
 }
 
 AGENT_CLASSES = {
@@ -38,10 +40,18 @@ KEY_TO_ACTION = {
     pygame.K_LEFT: 2,
     pygame.K_RIGHT: 3,
 }
+
 def get_model_path(level_id: int, algo_name: str) -> Path:
     """generates path: models/part1/level{id}_{algo}.pkl"""
     base_dir = Path(__file__).resolve().parents[2] / "models" / "part1"
+    base_dir.mkdir(parents=True, exist_ok=True)
     return base_dir / f"level{level_id}_{algo_name}.pkl"
+
+def get_log_path(level_id: int, algo_name: str) -> Path:
+    """generates path: logs/part1/level{id}_{algo}.csv"""
+    base_dir = Path(__file__).resolve().parents[2] / "logs" / "part1"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    return base_dir / f"level{level_id}_{algo_name}.csv"
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -68,6 +78,11 @@ def parse_arguments():
         help="override the level's default algorithm",
     )
     parser.add_argument(
+        "--intrinsic-reward",
+        action="store_true",
+        help="enable additional intrinsic reward for `train` mode, has no effect in other modes",
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=None,
@@ -91,6 +106,7 @@ def main():
 
     env = GridWorld(config["layout"])
     model_path = get_model_path(arguments.level, algo_name)
+    log_path = get_log_path(arguments.level, algo_name)
     
     if arguments.mode == "train":
         agent = agent_class(
@@ -104,10 +120,12 @@ def main():
             start_eps = training_config["epsilon_start"],
             end_eps = training_config["epsilon_end"],
             save_path = model_path,
+            log_path = log_path,
             max_steps = training_config["max_steps"],
             epsilon_decay_fraction = training_config[
                 "epsilon_decay_fraction"
             ],
+            intrinsic_reward_enabled=arguments.intrinsic_reward
         )
 
     elif arguments.mode == "evaluate":

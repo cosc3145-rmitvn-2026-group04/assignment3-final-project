@@ -9,6 +9,7 @@ GAMMA = 0.99
 EPSILON_START = 1.0
 EPSILON_END = 0.05
 EPSILON_DECAY_FRACTION = 1.0
+INTRINSIC_REWARD_STRENGTH = 0.001
 RANDOM_SEED = 2026
 MONSTER_MOVE_PROBABILITY = 0.4
 
@@ -23,6 +24,16 @@ LEVEL_TRAINING_OVERRIDES = {
     },
     4: {
         "episodes": 20_000,
+        "max_steps": 400,
+        "epsilon_decay_fraction": 0.8,
+    },
+    5: {
+        "episodes": 40_000,
+        "max_steps": 400,
+        "epsilon_decay_fraction": 0.8,
+    },
+    6: {
+        "episodes": 40_000,
         "max_steps": 400,
         "epsilon_decay_fraction": 0.8,
     },
