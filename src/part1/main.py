@@ -41,17 +41,23 @@ KEY_TO_ACTION = {
     pygame.K_RIGHT: 3,
 }
 
-def get_model_path(level_id: int, algo_name: str) -> Path:
+def get_model_path(level_id: int, algo_name: str, intrinsic_reward_enabled: bool = False) -> Path:
     """generates path: models/part1/level{id}_{algo}.pkl"""
     base_dir = Path(__file__).resolve().parents[2] / "models" / "part1"
     base_dir.mkdir(parents=True, exist_ok=True)
-    return base_dir / f"level{level_id}_{algo_name}.pkl"
+    if intrinsic_reward_enabled:
+        return base_dir / f"level{level_id}_{algo_name}.intrinsic_reward.pkl"
+    else:
+        return base_dir / f"level{level_id}_{algo_name}.pkl"
 
-def get_log_path(level_id: int, algo_name: str) -> Path:
+def get_log_path(level_id: int, algo_name: str, intrinsic_reward_enabled: bool = False) -> Path:
     """generates path: logs/part1/level{id}_{algo}.csv"""
     base_dir = Path(__file__).resolve().parents[2] / "logs" / "part1"
     base_dir.mkdir(parents=True, exist_ok=True)
-    return base_dir / f"level{level_id}_{algo_name}.csv"
+    if intrinsic_reward_enabled:
+        return base_dir / f"level{level_id}_{algo_name}.intrinsic_reward.csv"
+    else:
+        return base_dir / f"level{level_id}_{algo_name}.csv"
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -105,8 +111,8 @@ def main():
     random.seed(random_seed)
 
     env = GridWorld(config["layout"])
-    model_path = get_model_path(arguments.level, algo_name)
-    log_path = get_log_path(arguments.level, algo_name)
+    model_path = get_model_path(arguments.level, algo_name, arguments.intrinsic_reward)
+    log_path = get_log_path(arguments.level, algo_name, arguments.intrinsic_reward)
     
     if arguments.mode == "train":
         agent = agent_class(
