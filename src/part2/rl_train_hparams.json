@@ -1,6 +1,28 @@
 {
-    "total_timesteps": 1000000,
-    "eval_freq": 2000,
-    "n_eval_episodes": 5,
-    "log_freq": 1000
+    "total_timesteps": 8000000,
+    "train_curriculum": {
+        "n_phases": 16,
+        "enemy_spawner_count_range": [1, 4],
+        "enemy_spawner_health_range": [80, 20],
+        "enemy_spawner_spawn_amount_range": [3, 1],
+        "enemy_spawner_spawn_delay_range": [5.0, 4.0],
+        "enemy_spawner_spawn_delay_max_deviation": 1.0,
+        "enemy_spawner_activation_delay_range": [5.0, 6.0],
+        "enemy_spawner_activation_delay_max_deviation": 1.0,
+        "max_enemy_count_range": [5, 20]
+    },
+    "eval_curriculum": {
+        "n_phases": 4,
+        "enemy_spawner_count_range": [1, 4],
+        "enemy_spawner_health_range": [80, 20],
+        "enemy_spawner_spawn_amount_range": [3, 1],
+        "enemy_spawner_spawn_delay_range": [5.0, 4.0],
+        "enemy_spawner_spawn_delay_max_deviation": 1.0,
+        "enemy_spawner_activation_delay_range": [5.0, 6.0],
+        "enemy_spawner_activation_delay_max_deviation": 1.0,
+        "max_enemy_count_range": [5, 20]
+    },
+    "eval_freq": 40000,
+    "n_eval_episodes": 3,
+    "log_freq": 8000
 }

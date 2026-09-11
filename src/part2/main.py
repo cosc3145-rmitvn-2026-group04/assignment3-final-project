@@ -62,7 +62,13 @@ def main() -> None:
             "-M", "--model-path",
             type=Path,
             default=None,
-            help="If `mode` is set to 'train' or 'evaluate', sets path to the output/input model. If `mode` is 'train' and this is not specified, a default path in 'models/part2' will be used."
+            help="If `mode` is set to 'train' or 'evaluate', sets path to the output/input model. If `mode` is 'train' and this is not set, a default path in 'models/part2' will be used."
+    )
+    arg_parser.add_argument(
+            "-P", "--game-phases",
+            type=Path,
+            default=None,
+            help="If `mode` is set to 'play' or 'evaluate', loads the game phases from the specified file path instead of the default in `game_phases.json`."
     )
     arg_parser.add_argument(
             "-p", "--start-phase",
@@ -78,7 +84,7 @@ def main() -> None:
     )
     args: Namespace = arg_parser.parse_args()
 
-    phases: dict[str, Any] = get_phases()
+    phases: list[dict[str, Any]] = get_phases(phases_config_file=args.game_phases)
     match args.mode:
         case "train":
             action_style: ActionStyle
@@ -99,13 +105,12 @@ def main() -> None:
                     raise ValueError("Unrecognized RL algorithm.")
             model_path: Path = args.model_path
             if model_path:
-                if model_path.suffix != ".zip":
+                if model_path.suffix != ".pkl":
                     raise ValueError("Output model must be a .pkl file.")
                 if not model_path.resolve().parent.exists():
                     raise FileNotFoundError("Invalid path to model: %s" % (model_path.resolve().parent))
             train(
                     action_style=action_style,
-                    phases=phases,
                     algorithm=algorithm,
                     seed=args.seed,
                     n_threads=args.n_threads,
@@ -120,14 +125,18 @@ def main() -> None:
                 raise ValueError("Input model must be a .pkl file.")
             if not model_path.exists():
                 raise FileNotFoundError("Model not found at '%s'" % (model_path))
+            if args.game_phases and args.verbose > 0:
+                print("Game phases loaded from: '%s'." % (str(args.game_phases)))
             evaluate(
                     phases=phases,
                     start_phase=args.start_phase,
                     input_model=model_path,
                     verbose=args.verbose)
         case "play":
-            if args.start_phase < 0 or args.start_phase > len(phases["phases"]) - 1:
+            if args.start_phase < 0 or args.start_phase > len(phases) - 1:
                 raise RuntimeError("Invalid start phase specified.")
+            if args.game_phases and args.verbose > 0:
+                print("Game phases loaded from: '%s'." % (str(args.game_phases)))
             play(phases=phases, start_phase=args.start_phase, verbose=args.verbose)
 
 

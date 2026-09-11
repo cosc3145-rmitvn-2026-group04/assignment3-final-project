@@ -20,7 +20,7 @@ from part2.config import (
         COLOR_BACKGROUND)
 
 
-def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None:
+def play(phases: list[dict[str, Any]], start_phase: int = 0, verbose: int = 0) -> None:
     rprint("[bold yellow][ MODE: PLAY ][/bold yellow]")
 
     pygame.init()
@@ -38,15 +38,16 @@ def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None
 
     phase_index: int
     hud_show_help: bool = False
-    for phase_index in range(start_phase, len(phases["phases"])):
+    for phase_index in range(start_phase, len(phases)):
         player: Player = Player(controller=PlayerControllerInputStyleA())
         player.controller.attach_player(player)
-        game: Game = Game(player, phases["phases"][phase_index])
+        game: Game = Game(player, phases[phase_index])
 
         main_hud: MainHUD = MainHUD(fonts, game)
         help_hud: HelpHUD = HelpHUD(fonts)
 
         debug_render: bool = False
+        verbose_phase_won_printed: bool = False
         verbose_phase_lost_printed: bool = False
         running: bool = True
         while running:
@@ -77,6 +78,7 @@ def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None
                         player.controller = PlayerControllerInputStyleA()
                     player.controller.player = player
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                    verbose_phase_won_printed = False
                     verbose_phase_lost_printed = False
                     game.reset()
             # ==========================
@@ -98,16 +100,17 @@ def play(phases: dict[str, Any], start_phase: int = 0, verbose: int = 0) -> None
             if game.game_over:
                 if verbose > 0:
                     match game.status:
-                        case GameStatus.GAME_WON:
+                        case GameStatus.GAME_WON if not verbose_phase_won_printed:
                             rprint("[cyan]-> Phase %s won.[/cyan]" % (
-                                phases["phases"][phase_index]["phase_name"]
+                                phases[phase_index]["phase_name"]
                             ))
+                            verbose_phase_won_printed = True
                         case GameStatus.GAME_LOST if not verbose_phase_lost_printed:
                             rprint("[cyan]-> Phase %s lost. Press [R] to restart.[/cyan]" % (
-                                phases["phases"][phase_index]["phase_name"]
+                                phases[phase_index]["phase_name"]
                             ))
                             verbose_phase_lost_printed = True
-                if game.status == GameStatus.GAME_WON and phase_index < len(phases["phases"]) - 1:
+                if game.status == GameStatus.GAME_WON and phase_index < len(phases) - 1:
                     break
             # ==========================
 

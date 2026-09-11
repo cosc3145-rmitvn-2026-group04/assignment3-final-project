@@ -21,7 +21,7 @@ from part2.config import (
 
 
 def evaluate(
-        phases: dict[str, Any],
+        phases: list[dict[str, Any]],
         start_phase: int,
         input_model: Path,
         verbose: int = 0
@@ -29,20 +29,31 @@ def evaluate(
     rprint("[bold yellow][ MODE: EVALUATE ][/bold yellow]")
     print("Model: '%s'" % (input_model))
 
-    env: GameEnvironment = GameEnvironment(action_style=ActionStyle.STYLE_A, phases=phases)
-    observation: Any
-    total_reward: float = 0.0
-    terminated: bool
-    truncated: bool
-    info: dict[str, Any]
-    observation, info = env.reset()
-
     model_pkl: dict[str, Any]
     with open(input_model, "rb") as file:
         model_pkl = cloudpickle.load(file)
     model: Any = model_pkl["model"]
     model_algorithm_name: str = model_pkl["metadata"]["algorithm"]
     model_control_style_name: str = model_pkl["metadata"]["control_style"]
+
+    env: GameEnvironment
+    match model_control_style_name:
+        case "Control Style 1":
+            env = GameEnvironment(
+                    action_style=ActionStyle.STYLE_A,
+                    phases=phases)
+        case "Control Style 2":
+            env = GameEnvironment(
+                    action_style=ActionStyle.STYLE_B,
+                    phases=phases)
+        case _:
+            raise ValueError("Loaded model has unrecognized action style.")
+    observation: Any
+    total_reward: float = 0.0
+    terminated: bool
+    truncated: bool
+    info: dict[str, Any]
+    observation, info = env.reset()
     action: Any
     states: Any
 
@@ -61,8 +72,9 @@ def evaluate(
 
     phase_index: int
     hud_show_help: bool = False
-    for phase_index in range(start_phase, len(phases["phases"])):
+    for phase_index in range(start_phase, len(phases)):
         env.set_phase(phase_index)
+        current_phase_reward: float = 0.0
 
         main_hud: MainHUD = MainHUD(fonts, env.game)
         eval_aux_hud: EvaluationAuxiliaryHUD = EvaluationAuxiliaryHUD(fonts)
@@ -100,6 +112,7 @@ def evaluate(
                     observation=observation,
                     deterministic=True)
             observation, reward, terminated, truncated, info = env.step(action)
+            current_phase_reward += float(reward)
             total_reward += float(reward)
 
             main_hud.update(delta, events)
@@ -109,16 +122,18 @@ def evaluate(
                     hud_show_help,
                     model_algorithm_name,
                     model_control_style_name,
+                    current_phase_reward,
                     total_reward)
 
             if (
                 terminated or truncated
                 and info["game_status"] == GameStatus.GAME_WON
-                and phase_index < len(phases["phases"]) - 1
+                and phase_index < len(phases) - 1
             ):
                 if verbose > 0:
-                    rprint("[cyan]-> Phase %s. Cumulative reward: %.2f[/cyan]" % (
+                    rprint("[cyan]-> Phase %s. Phase reward: %.2f | Cumulative reward: %.2f[/cyan]" % (
                         "won" if info["game_status"] == GameStatus.GAME_WON else "lost",
+                        current_phase_reward,
                         total_reward
                     ))
                 break
