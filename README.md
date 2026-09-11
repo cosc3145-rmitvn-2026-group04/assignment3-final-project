@@ -77,6 +77,11 @@ options:
                         If the 'mode' is set to 'train', sets the RNG seed for the training environment. Default: None
 ```
 
+#### Outputs:
+
+- `models/part1`: Trained model export directory.
+- `logs/part1`: Training logs directory (.csv files).
+
 ### Part 2
 
 ```
