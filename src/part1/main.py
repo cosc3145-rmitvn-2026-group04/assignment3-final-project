@@ -55,7 +55,7 @@ def get_log_path(level_id: int, algo_name: str) -> Path:
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Train or play the Part I gridworld."
+        description="Assignment 3 [Undergrad] - Part 1: Classical RL"
     )
     parser.add_argument(
         "mode",

@@ -64,17 +64,22 @@ python -m src.part1.main
 #### Arguments:
 
 ```txt
+usage: main.py [-h] [--level {0,1,2,3,4,5,6}] [--algo {q_learning,sarsa}] [--intrinsic-reward] [--seed SEED] {train,evaluate,manual}
+
 Assignment 3 [Undergrad] - Part 1: Classical RL
 
+positional arguments:
+  {train,evaluate,manual}
+                        execution mode
+
 options:
- mode {train, evaluate, manual}
-                         Train without graphics, evaluate the learnt policy or manually play the game
- --algo {qlearning,sarsa}
-                        Sets the reinforcement learning algorithm for training mod. Default: 'qlearning'
- --level {0,1,2,3,4,5,6}
-                        Sets the level for 'train' mode
- --seed
-                        If the 'mode' is set to 'train', sets the RNG seed for the training environment. Default: None
+  -h, --help            show this help message and exit
+  --level {0,1,2,3,4,5,6}
+                        gridworld level to run
+  --algo {q_learning,sarsa}
+                        override the level's default algorithm
+  --intrinsic-reward    enable additional intrinsic reward for `train` mode, has no effect in other modes
+  --seed SEED           override the configured random seed
 ```
 
 #### Outputs:
